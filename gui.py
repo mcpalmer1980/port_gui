@@ -1,5 +1,6 @@
 #!/bin/python3
 import pygame as pg
+import sys, os, json
 
 screen_size = 480, 320
 text = "Dungeon & Dragons: Warriors of the Eternal Sun is set in the world of Mystara, a setting of the Dungeons & Dragons game. The characters find themselves in a strange, red-hued world in which the horizon slopes upward in all directions, eventually vanishing into a crimson haze at the limits of sight. Their mission is to find and make allies in this new world or else the kingdom and its culture will perish."
@@ -128,6 +129,9 @@ def main():
     screen = pg.display.set_mode(screen_size)
 
     pl = port_list(screen)
+    with open('data.json') as inp:
+        d = json.load(inp)
+    r = Region(d['title'])
 
     running = True
     while running:
@@ -139,5 +143,127 @@ def main():
         pg.display.flip()
         clock.tick(30)
 
+class Region:
+    def __init__(self, data):
+        self._dict = data
+        self.area = self._verify_rect('area')
+        self.color = self._verify_color('color', (0,0,0))
+        self.thickness = self._verify_int('thickness', 0)
+        self.outline = self._verify_color('outline', optional=True)
+        self.roundness = self._verify_int('roundness', 0)
+
+        self.borderx = self._verify_int('border', 0)
+        self.bordery = self._verify_int('bordery', self.borderx)
+
+        self.image = self._verify_file('image', optional=True)
+        self.pattern = None # TODO add base64 image loading
+        self.repeat = self._verify_bool('repeat', False)
+        self.stretch = self._verify_bool('stretch', False)
+        
+        # TODO figure out how to use default/system fonts
+        self.font = self._verify_file('font', optional=True)
+        self.fontsize = self._verify_int('fontsize', 30)
+        self.fontcolor = self._verify_color('fontcolor', (255,255,255))
+        self.text = self._verify_text('text', optional=True)
+        self.list = self._verify_string_list('list', optional=True)
+        if self.text and self.list:
+            raise Exception('Cannot define text and a list')
+        self.scrollable = self._verify_bool('scrollable', False, True)
+        self.auto_scroll = self._verify_bool('autoscroll', False, True)
+
+    def _verify_rect(self, name, default=None, optional=False):
+        # AREA
+        val = self._dict.get('area', default)
+        if val == None and optional: return None
+
+        try:
+            if len(val) != 4:
+                raise Exception('Region area incorrect length')
+        except TypeError:
+            print('Region area not iterable')
+            raise
+        for i, p in enumerate(val):
+            if not isinstance(p, (int, float)):
+                raise Exception(f'point {i}{p} is not a number')
+            if type(p)==float and 0 < p <= 1:
+                val[i] = p * screen_size[i % 2]
+        val = pg.Rect(val)
+        print(f'{name}: {val}')
+        return val
+
+    def _verify_color(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        try:
+            if len(val) != 3:
+                raise Exception('color incorrect length')
+        except TypeError:
+            print('color not iterable')
+            raise
+        for i, p in enumerate(val):
+            if not isinstance(p, (int)):                
+                raise Exception(f'{i},{p} - invalid color type')
+            if p<0 or p>255:
+                raise Exception(f'{i},{p} - invalid color value')
+        print(f'{name}: {val}')
+        return val
+
+    def _verify_int(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        if not isinstance(val, int):
+            raise Exception(f'{name} is not an int')
+        print(f'{name}: {val}')
+        return val
+    
+    def _verify_file(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        if not isinstance(val, str):
+            raise Exception(f'{name} is not a string')        
+        if not os.path.exists(val):
+            raise Exception(f'{name} is not a file')
+        print(f'{name}: {val}')
+        return val
+    
+    def _verify_bool(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        if val in (True, False, 0, 1):
+            val = True if val else False
+            print(f'{name}: {val}')
+            return val
+        else:
+            raise Exception(f'{name} is not BOOL')
+    
+    def _verify_text(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        if isinstance(val, str):
+            print(f'{name}: {val}')
+            return val
+        else:
+            raise(f'{name} is not text')
+    
+    def _verify_string_list(self, name, default=None, optional=False):
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        if not isinstance(val, (list, tuple)):
+            raise Exception(f'{name} is not a list')
+        for i, v in enumerate(val):
+            if not isinstance(v, str):
+                raise Exception(f'{name}[{i}] == {v}, not a string')
+        print(f'{name}: {val}')
+        return val
+
+
+
+
 if __name__ == '__main__':
-    main()
+    main()  

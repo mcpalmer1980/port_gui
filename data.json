@@ -1,0 +1,41 @@
+{
+    "title":
+    {
+        "area": [0,0,0.5,1.0],
+        "color": [0,0,255],
+        "outline": [0,0,0],
+        "thickness": 0,
+        "roundness": 0,
+        "border": 2,
+        "pattern": "",
+        "repeat": false,
+        "font": null,
+        "fontsize": 0,
+        "fontcolor": [0,0,0],
+        "text": null,
+        "list": ["one", "two"],
+        "scrollable": 0,
+        "autoscroll": 0
+    },
+    "list":
+    {
+        "area": [0,0,1,1],
+        "color": [10,10,10],
+        "outline": [0,0,0],
+        "thickness": 0,
+        "roundness": 0,
+        "border": 2,
+        "bordery": 0,
+        "image": "image.png",
+        "pattern": "",
+        "repeat": 0,
+        "stretch": 0,
+        "font": 0,
+        "fontsize": 0,
+        "fontcolor": [0,0,0],
+        "text": "",
+        "list": "",
+        "scrollable": 0,
+        "autoscroll": 0
+    }
+}
