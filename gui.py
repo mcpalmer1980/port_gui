@@ -173,7 +173,7 @@ class Region:
 
     def _verify_rect(self, name, default=None, optional=False):
         # AREA
-        val = self._dict.get('area', default)
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         try:
