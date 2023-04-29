@@ -1,27 +1,25 @@
-import sys, os, random
-import sdl2
-import sdl2.ext
-from sdl2.ext import FontTTF
+import sys, os, random, json
+import sdl2, sdl2.ext
 from rect import Rect
-import tfont
+from tfont import FontManager
+from gui import ImageManager, Region
 
-from ctypes import c_int, byref
+screen_size = 640,480
+desc = "Dungeon & Dragons: Warriors of the Eternal Sun is set in the world of Mystara, a setting of the Dungeons & Dragons game. The characters find themselves in a strange, red-hued world in which the horizon slopes upward in all directions, eventually vanishing into a crimson haze at the limits of sight. Their mission is to find and make allies in this new world or else the kingdom and its culture will perish."
 
-def get_text_size(font, text=''):
-    f = font.get_ttf_font()
-    text_w, text_h = c_int(0), c_int(0)
-    sdl2.sdlttf.TTF_SizeText(f, text.encode(), byref(text_w), byref(text_h))
-    if not text:
-        return text_h.value
-    return  text_w.value, text_h.value
 
-def run():
+def main():
     sdl2.ext.init()
     window = sdl2.ext.Window("Harbour Master", size=(640, 480))
     screen = sdl2.ext.renderer.Renderer(window,
             flags=sdl2.SDL_RENDERER_ACCELERATED)
     screen.clear((255,0,0))
-    tf = tfont.TextureFont(screen, 'font.ttf', 45)
+    fonts = FontManager(screen)
+    tf = fonts.load('font.ttf', 25)
+    f = fonts.load('font2.ttf', 30)
+
+    with open('data.json') as inp:
+        d = json.load(inp)
 
     images = ImageManager(screen)
     ipath = '/home/michael/Roms/genesis/media/images'
@@ -29,6 +27,8 @@ def run():
     for fn in files:
         images.load(fn)
     texture = images.load(random.choice(images.cache))
+
+    title = Region(screen, d['title'], images, fonts)
     window.show()
 
     running = 1
@@ -40,44 +40,19 @@ def run():
                 running = False
                 break
         screen.copy(texture)
-        tf.draw("Testing it!", 20,20, (255,0,0))
-        screen.copy(tf.texture, (0,0,-300,50))
+        #fonts.draw(desc, 20,60, (0,0,255), clip=Rect(10,10, 500,200), wrap=-10, align='center')
+        title.draw()
         screen.present()
         window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
 
-
-        if not running % 45:
+        if not running % 90:
             texture = images.load(random.choice(images.cache))
     return 0
 
 
-class ImageManager():
-    MAX_IMAGES = 20
-    def __init__(self, screen):
-        self.screen = screen
-        self.images = {}
-        self.cache = []
-    
-    def load(self, fn):
-        if fn in self.cache:
-            i = self.cache.index(fn)
-            self.cache.insert(0, self.cache.pop(i))
-            image = self.images[fn]
-            return image
-        
-        surf = sdl2.ext.image.load_img(fn)
-        texture = sdl2.ext.renderer.Texture(self.screen, surf)
-        self.images[fn] = texture
-        self.cache.insert(0, fn)
-        self.clean()
-    
-    def clean(self):
-        for fn in self.cache[self.MAX_IMAGES:]:
-            texture = self.images.pop(fn)
-            texture.destroy()
-        self.cache = self.cache[:self.MAX_IMAGES]
 
 
 if __name__ == "__main__":
-    sys.exit(run())
+    main()
+    sys.exit()

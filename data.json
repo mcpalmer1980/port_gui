@@ -1,19 +1,23 @@
 {
     "title":
     {
-        "area": [0,0,0.5,1.0],
+        "area": [0,0.5,0.5,0.5],
         "color": [0,0,255],
         "outline": [0,0,0],
         "thickness": 0,
         "roundness": 0,
         "border": 2,
+        "bordery": null,
+        "image": "tall.png",
         "pattern": "",
         "repeat": false,
+        "stretch": false,
         "font": null,
         "fontsize": 0,
         "fontcolor": [0,0,0],
         "text": null,
         "list": ["one", "two"],
+        "align": null,
         "scrollable": 0,
         "autoscroll": 0
     },

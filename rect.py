@@ -8,15 +8,15 @@ class Point:
 
 class Rect:
     def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.x = int(x)
+        self.y = int(y)
+        self.width = int(width)
+        self.height = int(height)
     def __repr__(self):
         return f'Rect({self.x},{self.y},{self.width},{self.height})'
     
     def __mul__(self, v):
-        'scale by v keeping center in position'
+        'Scale by v keeping center in position'
         cx, cy = self.center
         r = Rect(self.x, self.y, self.width, self.height)
         r.width *= v
@@ -28,15 +28,15 @@ class Rect:
         return Rect(self.x, self.y, self.width, self.height)    
 
     def fit(self, other):
-        'move and resize self to fill other rect maintaining aspect ratio'
-        r = self.fit(other)
+        'Move and resize myself to fill other rect maintaining aspect ratio'
+        r = self.fitted(other)
         self.x = r.x; self.width = r.width
         self.y = r.y; self.height = r.height
 
     def fitted(self, other):
         '''
-        return Rect whith other centered and resized to fill self
-        maintaining aspect ratio'''
+        Return new Rect whith other centered and resized to fill self
+        Aspect ration is retained'''
         xr = self.width / other.width
         yr = self.height / other.height
         mr = xr if yr < xr else yr
@@ -49,28 +49,53 @@ class Rect:
 
     def from_corners(x, y, x2, y2):
         '''
-        return rect using bottom and right coordinates instead
+        Return a new rect using bottom and right coordinates instead
         of width and height'''
         return Rect(x, y, x2-x, y2-y)
+
+    def inflate(self, x, y=None):
+        '''
+        Add x to width and y to height of rect, or x to both
+        The rect will remain centered around the same point'''
+
+        y = y if y != None else x
+        self.x += x
+        self.y += y
+        self.width -= x//2
+        self.height -= y//2
+    def inflated(self, x, y=None):
+        '''
+        Return a copy of self with x added to the width and y to the
+        height of rect, or x to both. The rect will remain centered
+        around the same point'''
+
+        y = y if y != None else x
+        nx = self.x + x
+        ny = self.y + y
+        nw = self.width - x//2
+        nh = self.height - y//2
+        return Rect(nx, ny, nw, nh)
     
     def move(self, x, y):
-        'move self by x/y pixels'
+        'Move self by x/y pixels'
         self.x += x
         self.y += y
     def moved(self, x, y):
-        'return copy of rect moved by x/y pixels'
+        'Return copy of rect moved by x/y pixels'
         return Rect(
             self.x + x, self.y + y,
             self.width, self.height)
 
 
     def sdl(self):
+        'Return my value as an sdl_rect'
         return sdl2.SDL_Rect(self.x, self.y, self.width, self.height)
     def tuple(self):
+        'Return my value as a 4-tuple'
         return self.x, self.y, self.width, self.height
 
     def update(self, x, y, w, h):
-        'update self with new position and size'
+        'Update myself with new position and size'
         self.x = x; self.width = w
         self.y = y; self.height = h
 
