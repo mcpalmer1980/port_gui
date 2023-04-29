@@ -1,3 +1,5 @@
+import sdl2
+
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -45,7 +47,6 @@ class Rect:
         y = int(other.y + (other.height - h) / 2)
         return Rect(x, y, w, h)
 
-
     def from_corners(x, y, x2, y2):
         '''
         return rect using bottom and right coordinates instead
@@ -59,8 +60,14 @@ class Rect:
     def moved(self, x, y):
         'return copy of rect moved by x/y pixels'
         return Rect(
-            self.x + x, self.y + y2,
+            self.x + x, self.y + y,
             self.width, self.height)
+
+
+    def sdl(self):
+        return sdl2.SDL_Rect(self.x, self.y, self.width, self.height)
+    def tuple(self):
+        return self.x, self.y, self.width, self.height
 
     def update(self, x, y, w, h):
         'update self with new position and size'
