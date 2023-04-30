@@ -74,7 +74,7 @@ class FontManager():
 
 
     def draw(self, text, x, y, color=None, alpha=None,
-            align=False, valign=False, clip=None, wrap=None, font=None):
+            align=False, clip=None, wrap=None, linespace=0, font=None):
         '''
         Draw text string onto pySDL2.ext.Renderer context
 
@@ -102,38 +102,35 @@ class FontManager():
         if wrap and not clip: # must have a clip if wrapping
             w = self.renderer.logical_size[0] - x
             h = self.renderer.logical_size[1] - y
-            align = valign = False
             clip = Rect(x, y, w, h)
         if isinstance(clip, int): # convert clip width into clip rect
             clip = Rect(x, y, clip, self.height)
 
         if wrap:
-            vspace = wrap if isinstance(wrap, int) else 0
             wrapped_text = self._split_lines(text, clip)
-            if len(wrapped_text) > 1:
+            lines = len(wrapped_text)
+            if lines > 1:
+
+                if align in ('midleft', 'center', 'midright'):
+                    y -= (self.height * lines) // 2 + (linespace * (lines/2))
+                elif align in ('bottomleft', 'midbottom', 'bottomright'):
+                    y -= (self.height) * lines + linespace * lines
                 for line in wrapped_text:
-                    self.draw(line, x, y, color, alpha, align, valign, clip)
-                    y += self.height + vspace
-                    if y + self.height + vspace > clip.height:
+                    self.draw(line, x, y, color, alpha, align, clip)
+                    y += self.height + linespace
+                    if y + self.height + linespace > clip.bottom:
                         break
             return clip
 
-        dest = Rect(x, y, 1, self.height)
+        out_rect = Rect(0, 0, self.width(text), self.height)
+        dx, dy = getattr(out_rect, align, (0,0))
+        dest = Rect(x-dx, y-dy, 1, self.height)
+        out_rect.topleft = dest.topleft
+
         sdl2.SDL_SetTextureAlphaMod(texture.tx, alpha or 255)
         color = color or (255,255,255)
         sdl2.SDL_SetTextureColorMod(texture.tx, *color)
 
-        if align == 'right':
-            dest.left -= self.width(text)
-        elif align == 'center':
-            dest.left -= self.width(text) // 2
-        if valign == 'bottom':
-            dest.top -= self.height
-        elif valign == 'center':
-            dest.top -= self.height // 2
-
-        x, y = dest.x, dest.top
-        width = 0
         for c in text:
             src = cmap.get(c, self.blank)
             dest.width = src.width
@@ -142,8 +139,7 @@ class FontManager():
 
             self.renderer.copy(texture, src.sdl(), dest.sdl())
             dest.x += src.width
-            width += src.width
-        return Rect(x, y, width, height)
+        return out_rect
 
     def width(self, text, scale=1):
         '''

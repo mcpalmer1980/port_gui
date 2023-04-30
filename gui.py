@@ -36,6 +36,17 @@ class ImageManager():
         self.cache = self.cache[:self.MAX_IMAGES]
 
 class Region:
+    '''
+    For drawing a rectangular region on a renderer context
+    Regions may have a fill color, outline, image, and/or text
+    Attributes are loaded from a json file
+    
+    area, color, thickness, outline, roundness, 
+    image, pattern, repeat, stretch
+    borderx, border
+    font, fontsize, fontcolor, text, align
+    scrollable, autoscroll, wrap, linespace
+    '''
     def __init__(self, renderer, data, images, fonts):
         self._dict = data
         self.renderer = renderer
@@ -48,7 +59,7 @@ class Region:
         self.roundness = self._verify_int('roundness', 0)
 
         self.borderx = self._verify_int('border', 0)
-        self.bordery = self._verify_int('bordery', self.borderx, True)
+        self.bordery = self._verify_int('bordery', self.borderx) or 0
 
         self.image = self._verify_file('image', optional=True)
         self.pattern = None # TODO add base64 image loading
@@ -61,15 +72,27 @@ class Region:
         self.fontcolor = self._verify_color('fontcolor', (255,255,255))
         self.text = self._verify_text('text', optional=True)
         self.list = self._verify_string_list('list', optional=True)
-        self.align = self._verify_option('align', ('center', 'right'), None)
+        self.align = self._verify_option('align', Rect.POINTS, 'topleft')
         if self.text and self.list:
             raise Exception('Cannot define text and a list')
         self.scrollable = self._verify_bool('scrollable', False, True)
         self.auto_scroll = self._verify_bool('autoscroll', False, True)
+        self.wrap = self._verify_bool('wrap', False, True)
+        self.linespace = self._verify_int('linespace', 0, True)
 
     def draw(self):
-        self.renderer.fill(self.area.tuple(), self.color)
+        '''
+        Draw all Regions we handle'''
 
+        # Draw Rect and outline
+        if self.outline:
+            self._draw_rect(self.area, self.outline, self.roundness)
+            r = self.area.inflated(-self.thickness*2)
+            self._draw_rect(r, self.color, self.roundness)
+        else:
+            self._draw_rect(r, self.color, self.roundness)
+
+        # Draw image
         if self.image:
             image = self.images.load(self.image)
             if self.repeat:
@@ -80,8 +103,19 @@ class Region:
             else:
                 self.renderer.copy(image, dstrect=self.area.sdl())
 
+        # Draw text
+        if self.font and (self.text or self.list):
+            text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
+            x, y = getattr(text_area, self.align, text_area.topleft)
+            
+            self.fonts.load(self.font, self.fontsize)
+            self.fonts.draw(self.text, x, y, self.fontcolor, 255,
+                    self.align, self.area, self.wrap, self.linespace)
 
 
+
+    def _draw_rect(self, rect, color, round=0):        
+        self.renderer.fill(rect.sdl(), color)
 
     def _verify_rect(self, name, default=None, optional=False):
         # AREA
@@ -121,9 +155,8 @@ class Region:
         print(f'{name}: {val}')
         return val
 
-    def _verify_int(self, name, default=None, optional=False):
+    def _verify_int(self, name, default=0, optional=False):
         val = self._dict.get(name, default)
-        print(val)
         if val == None and optional: return None
 
         if not isinstance(val, int):

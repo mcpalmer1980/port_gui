@@ -7,6 +7,8 @@ class Point:
 
 
 class Rect:
+    POINTS = ('topleft midtop topright midleft center midright '+
+              'bottomleft midbottom bottomright').split()
     def __init__(self, x, y, width, height):
         self.x = int(x)
         self.y = int(y)
@@ -59,10 +61,10 @@ class Rect:
         The rect will remain centered around the same point'''
 
         y = y if y != None else x
-        self.x += x
-        self.y += y
-        self.width -= x//2
-        self.height -= y//2
+        self.x -= x // 2
+        self.y -= y // 2
+        self.width += x
+        self.height += y
     def inflated(self, x, y=None):
         '''
         Return a copy of self with x added to the width and y to the
@@ -70,10 +72,10 @@ class Rect:
         around the same point'''
 
         y = y if y != None else x
-        nx = self.x + x
-        ny = self.y + y
-        nw = self.width - x//2
-        nh = self.height - y//2
+        nx = self.x - x // 2
+        ny = self.y - y // 2
+        nw = self.width + x
+        nh = self.height + y
         return Rect(nx, ny, nw, nh)
     
     def move(self, x, y):
@@ -114,6 +116,7 @@ class Rect:
         self.height = v
         self.y -= v//2
 
+    # EDGES
     @property
     def top(self):
         return self.y
@@ -143,42 +146,6 @@ class Rect:
         self.x = v - self.width
 
     @property
-    def bottomleft(self):
-        return self.x, self.y + self.height
-    @bottomleft.setter
-    def bottomleft(self, v):
-        x, y = v
-        self.x = x
-        self.y = y - self.height
-
-    @property
-    def topleft(self):
-        return self.x, self.y
-    @topleft.setter
-    def topleft(self, v):
-        x, y = v
-        self.x = x
-        self.y = y
-
-    @property
-    def topright(self):
-        return self.x + self.width, y
-    @topright.setter
-    def topright(self, v):
-        x, y = v
-        self.x = x - self.width
-        self.y = y
-
-    @property
-    def center(self):
-        return self.x + (self.width//2), self.y + (self.height//2)
-    @center.setter
-    def center(self, v):
-        x, y = v
-        self.x = x - self.width//2
-        self.y = y - self.height//2
-    
-    @property
     def centerx(self):
         return self.x + self.width//2
     @centerx.setter
@@ -191,23 +158,15 @@ class Rect:
     def centery(self, v):
         self.y = v - self.height//2
 
+    # FIRST ROW
     @property
-    def midleft(self):
-        return self.x, self.y + self.height//2
-    @midleft.setter
-    def midleft(self, v):
+    def topleft(self):
+        return self.x, self.y
+    @topleft.setter
+    def topleft(self, v):
         x, y = v
         self.x = x
-        self.y = y - self.height//2
-    @property
-    def midright(self):
-        return self.x+self.width, self.y + self.height//2
-    @midright.setter
-    def midright(self, v):
-        x, y = v
-        self.x = x - self.width
-        self.y = y - self.height//2
-    
+        self.y = y
     @property
     def midtop(self):
         return self.x+self.width//2, self.y
@@ -217,12 +176,66 @@ class Rect:
         self.x = x - self.width//2
         self.y = y
     @property
+    def topright(self):
+        return self.x + self.width, self.y
+    @topright.setter
+    def topright(self, v):
+        x, y = v
+        self.x = x - self.width
+        self.y = y
+
+    # SECOND ROW
+    @property
+    def midleft(self):
+        return self.x, self.y + self.height//2
+    @midleft.setter
+    def midleft(self, v):
+        x, y = v
+        self.x = x
+        self.y = y - self.height//2
+
+    @property
+    def center(self):
+        return self.x + (self.width//2), self.y + (self.height//2)
+    @center.setter
+    def center(self, v):
+        x, y = v
+        self.x = x - self.width//2
+        self.y = y - self.height//2
+
+    @property
+    def midright(self):
+        return self.x+self.width, self.y + self.height//2
+    @midright.setter
+    def midright(self, v):
+        x, y = v
+        self.x = x - self.width
+        self.y = y - self.height//2
+    
+    # THIRD ROW
+    @property
+    def bottomleft(self):
+        return self.x, self.y + self.height
+    @bottomleft.setter
+    def bottomleft(self, v):
+        x, y = v
+        self.x = x
+        self.y = y - self.height
+    @property
     def midbottom(self):
         return self.x+self.width//2, self.y+self.height
     @midbottom.setter
     def midbottom(self, v):
         x, y = v
         self.x = x - self.width//2
+        self.y = y - self.height
+    @property
+    def bottomright(self):
+        return self.x+self.width, self.y+self.height
+    @bottomright.setter
+    def botomright(self, v):
+        x, y = v
+        self.x = x - self.width
         self.y = y - self.height
 
     @property
