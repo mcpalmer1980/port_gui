@@ -6,7 +6,7 @@ from gui import ImageManager, Region
 
 DEFAULT_SIZE= 480, 320
 desc = "Dungeon & Dragons: Warriors of the Eternal Sun is set in the world of Mystara, a setting of the Dungeons & Dragons game. The characters find themselves in a strange, red-hued world in which the horizon slopes upward in all directions, eventually vanishing into a crimson haze at the limits of sight. Their mission is to find and make allies in this new world or else the kingdom and its culture will perish."
-
+game_list = ["3 Ninjas Kick Back", "AD&D - Warriors of the Eternal Sun", "AWS Pro Moves Soccer", "Aa Harimanada", "Aaahh!!! Real Monsters", "Action 52-in-1", "Addams Family Values", "Addams Family", "Advanced Busterhawk Gleylancer", "Advanced Military Commander", "Adventures of Batman & Robin", "Adventures of Mighty Max", "Adventures of Rocky and Bullwinkle", "Aero The Acro-bat I", "Aero The Acro-bat II", "Aerobiz Supersonic", "Aerobiz", "After Burner Complete", "After Burner II", "Air Buster", "Air Diver", "Aladdin", "Alex Kidd In The Enchanted Castle", "Alien III", "Alien Soldier", "Alien Storm", "Alisia Dragoon", "Altered Beast", "American Gladiators", "Andre Agassi Tennis"]
 
 def main():
     with open('data.json') as inp:
@@ -32,10 +32,12 @@ def main():
     texture = images.load(random.choice(images.cache))
 
     title = Region(screen, d['title'], images, fonts)
+    title.text = '\n'.join(game_list)
     window.show()
 
     inp = InputHandler()
 
+    update = True
     running = 1
     while running:
         running += 1
@@ -45,17 +47,28 @@ def main():
             running = False
         if inp.pressed:
             print(inp.pressed)
+            if inp.pressed == 'up':
+                title.selected -= 1
+            elif inp.presseed == 'down':
+                title.selected += 1
 
+        if title.update():
+            update = True
 
-        screen.copy(texture)
-        #fonts.draw(desc, 20,60, (0,0,255), clip=Rect(10,10, 500,200), wrap=-10, align='center')
-        title.draw()
+        elif not running % 90:
+            update = True
+            texture = images.load(random.choice(images.cache))
+
+        if update:
+            update = False
+            screen.clear()
+            screen.copy(texture)
+            title.draw()
+
         screen.present()
         window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
 
-        if not running % 90:
-            texture = images.load(random.choice(images.cache))
     return 0
 
 KEY_MAP = {
@@ -90,6 +103,7 @@ class InputHandler():
         self.axes = {}
         self.last_press = None
         self.held_for = 0
+        self.selected = 0
 
     def process(self, events):
         self.pressed = None
@@ -99,7 +113,7 @@ class InputHandler():
             elif e.type == sdl2.SDL_CONTROLLERDEVICEADDED:
                 sdl2.ext.common.init(controller=True)
                 self.joy = sdl2.SDL_GameControllerOpen(0)
-                print('controller connected')
+                print('Controller connected')
             
             # KEYBOARD
             elif e.type == sdl2.SDL_KEYDOWN:

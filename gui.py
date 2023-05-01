@@ -2,6 +2,15 @@ import os, sys
 import sdl2, sdl2.ext
 from rect import Rect
 
+'''
+TODO
+    Rounded rects (sdl2_gfx, manually)
+    Patches (9-patched image rendering)
+    Imagelist (to match text list, with alignment)
+    Text animation
+    '''
+
+
 class ImageManager():
     '''
     Load images into Textures and cache them for later use'''
@@ -70,15 +79,18 @@ class Region:
         self.font = self._verify_file('font', optional=True)
         self.fontsize = self._verify_int('fontsize', 30)
         self.fontcolor = self._verify_color('fontcolor', (255,255,255))
-        self.text = self._verify_text('text', optional=True)
+        self._text = self._verify_text('text', optional=True)
         self.list = self._verify_string_list('list', optional=True)
         self.align = self._verify_option('align', Rect.POINTS, 'topleft')
         if self.text and self.list:
             raise Exception('Cannot define text and a list')
         self.scrollable = self._verify_bool('scrollable', False, True)
-        self.auto_scroll = self._verify_bool('autoscroll', False, True)
+        self.autoscroll = self._verify_int('autoscroll', 0, True)
         self.wrap = self._verify_bool('wrap', False, True)
         self.linespace = self._verify_int('linespace', 0, True)
+
+        self.life = 0
+        self.selected = 0
 
     def draw(self):
         '''
@@ -104,15 +116,36 @@ class Region:
                 self.renderer.copy(image, dstrect=self.area.sdl())
 
         # Draw text
-        if self.font and (self.text or self.list):
+        if self.font and (self.text):
+            pos = self.selected % len(self.text)
+
+            self.fonts.load(self.font, self.fontsize)
             text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
             x, y = getattr(text_area, self.align, text_area.topleft)
-            
-            self.fonts.load(self.font, self.fontsize)
-            self.fonts.draw(self.text, x, y, self.fontcolor, 255,
-                    self.align, self.area, self.wrap, self.linespace)
+            for l in self._text[pos:]:
+                if y + self.fonts.height > text_area.bottom:
+                    break
+                y += self.fonts.draw(l, x, y, self.fontcolor, 255,
+                        self.align, text_area).height + self.linespace
 
-
+    def update(self):
+        updated = False
+        self.life += 1
+        if self.autoscroll:
+            if not self.life % self.autoscroll:
+                self.selected += 1
+                updated = True
+        return updated
+        
+    @property
+    def text(self):
+        return self._text
+    @text.setter
+    def text(self, val):
+        self.fonts.load(self.font, self.fontsize)
+        text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
+        self._text = self.fonts._split_lines(val, text_area)
+        print(f'text set to {self._text}')
 
     def _draw_rect(self, rect, color, round=0):        
         self.renderer.fill(rect.sdl(), color)

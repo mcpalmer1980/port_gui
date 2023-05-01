@@ -20,12 +20,12 @@
         "fontsize": 16,
         "fontcolor": [255,255,255],
         "text": "Hello there",
-        "wrap": false,
+        "wrap": true,
         "linespace": 0,
         "list": null,
         "align": "topleft",
         "scrollable": 0,
-        "autoscroll": 0
+        "autoscroll": 10
     },
     "list":
     {
