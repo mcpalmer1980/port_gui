@@ -10,7 +10,7 @@ def get_text_size(font, text=''):
         return text_h.value
     return  text_w.value, text_h.value
 
-char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+<>~@/\\|(%)'''
+char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+&<>~@/\\|(%)'''
 class FontManager():
     '''
     Font renderer for use with pygame._sdl2
@@ -24,16 +24,25 @@ class FontManager():
         self.renderer = renderer
         self.fonts = {}
         self.cmaps = {}
-        self.cache = []
+        self.cache = {}
+    def __del__(self):
+        for t, h in self.fonts.values():
+            t.destroy()
     
-    def load(self, filename, size):
+    def load(self, filename, size=None):
         '''
         Load a font for later rendering
 
         :param filename: path to a ttf or otf format font file
         :param size: int point size for font or 'XXXpx' for pixel height
         '''
-        self.cache.insert(0, (filename, size))
+        if not size:
+            filename, cache = filename
+        if (filename, size) in self.fonts:
+            self.texture, self.height = self.fonts[(filename, size)]
+            self.cmap = self.cmaps[(filename, size)]
+            self.blank = self.cmap[' ']
+            return filename, size
 
         font = sdl2.ext.FontTTF(filename, size, (255,255,255))
         self.cmap = {}
@@ -70,6 +79,7 @@ class FontManager():
         self.texture = sdl2.ext.renderer.Texture(self.renderer, surface)
         self.fonts[(filename, size)] = self.texture, self.height
         self.cmaps[(filename, size)] = self.cmap
+        sdl2.SDL_FreeSurface(surface)
         return filename, size
 
 

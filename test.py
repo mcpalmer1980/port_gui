@@ -32,7 +32,9 @@ def main():
     texture = images.load(random.choice(images.cache))
 
     title = Region(screen, d['title'], images, fonts)
-    title.text = '\n'.join(game_list)
+    title.list = game_list
+    select = Region(screen, d['list'], images, fonts)
+    title.select = select
     window.show()
 
     inp = InputHandler()
@@ -48,14 +50,16 @@ def main():
         if inp.pressed:
             print(inp.pressed)
             if inp.pressed == 'up':
+                update = True
                 title.selected -= 1
-            elif inp.presseed == 'down':
+            elif inp.pressed == 'down':
+                update = True
                 title.selected += 1
 
         if title.update():
             update = True
 
-        elif not running % 90:
+        if not running % 90:
             update = True
             texture = images.load(random.choice(images.cache))
 
@@ -69,6 +73,7 @@ def main():
         window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
 
+    screen.destroy()
     return 0
 
 KEY_MAP = {
@@ -127,11 +132,11 @@ class InputHandler():
                         self.last_press = self.keys, key
                         self.pressed = KEY_MAP[key]
                         self.held_for = -self.REPEAT_DELAY
-                    print('pressed', key)
+                    #print('pressed', key)
             elif e.type == sdl2.SDL_KEYUP:
                 key = e.key.keysym.sym
                 self.keys[key] = False
-                print('released', key)
+                #print('released', key)
 
             # BUTTONS
             elif e.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
@@ -141,11 +146,11 @@ class InputHandler():
                     self.last_press = self.buttons, butt
                     self.pressed = BUTTON_MAP[butt]
                     self.held_for = -self.REPEAT_DELAY
-                print('pressed', butt)
+                #print('pressed', butt)
             elif e.type == sdl2.SDL_CONTROLLERBUTTONUP:
                 butt = e.cbutton.button
                 self.buttons[butt] = False
-                print('released', butt)
+                #print('released', butt)
 
             elif e.type == sdl2.SDL_CONTROLLERAXISMOTION:
                 self.axes[e.caxis.axis] = e.caxis.value / self.AXIS_MOD

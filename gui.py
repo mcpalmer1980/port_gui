@@ -6,8 +6,10 @@ from rect import Rect
 TODO
     Rounded rects (sdl2_gfx, manually)
     Patches (9-patched image rendering)
-    Imagelist (to match text list, with alignment)
-    Text animation
+    Imagelist (separate image for each list item, with alignment)
+    Text animation (rotation, scaling, color changing)
+    tiled image rendering
+    Map controller axes to inp.pressed
     '''
 
 
@@ -80,26 +82,30 @@ class Region:
         self.fontsize = self._verify_int('fontsize', 30)
         self.fontcolor = self._verify_color('fontcolor', (255,255,255))
         self._text = self._verify_text('text', optional=True)
-        self.list = self._verify_string_list('list', optional=True)
         self.align = self._verify_option('align', Rect.POINTS, 'topleft')
-        if self.text and self.list:
+        if self._text and self.list:
             raise Exception('Cannot define text and a list')
         self.scrollable = self._verify_bool('scrollable', False, True)
         self.autoscroll = self._verify_int('autoscroll', 0, True)
         self.wrap = self._verify_bool('wrap', False, True)
         self.linespace = self._verify_int('linespace', 0, True)
 
+        self.list = self._verify_string_list('list', optional=True)
+        self.select = self._verify_color('selected', optional=True)
+        self.itemsize = self._verify_int('itemsize', None, True)
+
         self.life = 0
         self.selected = 0
 
-    def draw(self):
+    def draw(self, area=None, text=None):
         '''
-        Draw all Regions we handle'''
+        Draw all features of this Region'''
 
+        area = area or self.area
         # Draw Rect and outline
         if self.outline:
-            self._draw_rect(self.area, self.outline, self.roundness)
-            r = self.area.inflated(-self.thickness*2)
+            self._draw_rect(area, self.outline, self.roundness)
+            r = area.inflated(-self.thickness*2)
             self._draw_rect(r, self.color, self.roundness)
         else:
             self._draw_rect(r, self.color, self.roundness)
@@ -111,22 +117,47 @@ class Region:
                 pass
             elif self.stretch:
                 self.renderer.copy(image, dstrect=Rect(
-                        0,0, *image.size).fitted(self.area).sdl())
+                        0,0, *image.size).fitted(area).tuple())
             else:
-                self.renderer.copy(image, dstrect=self.area.sdl())
+                self.renderer.copy(image, dstrect=area.tuple())
 
         # Draw text
-        if self.font and (self.text):
-            pos = self.selected % len(self.text)
+        text_area = area.inflated(-self.borderx*2, -self.bordery*2)
+        if self.font and text:
+            x, y = getattr(text_area, self.align, text_area.topleft)
+            self.fonts.draw(text, x, y, self.fontcolor, 255,
+                    self.align, text_area).height + self.linespace
+        elif self.font and self._text:
+            pos = self.selected % len(self._text)
 
             self.fonts.load(self.font, self.fontsize)
-            text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
             x, y = getattr(text_area, self.align, text_area.topleft)
             for l in self._text[pos:]:
                 if y + self.fonts.height > text_area.bottom:
                     break
                 y += self.fonts.draw(l, x, y, self.fontcolor, 255,
                         self.align, text_area).height + self.linespace
+
+        elif self.font and self.list:
+            itemsize = self.itemsize or self.font.height + self.bordery
+            self.page_size = area.height // itemsize
+            self.selected = self.selected % len(self.list)
+
+            self.fonts.load(self.font, self.fontsize)
+            start = max(0, self.selected - self.page_size//3)
+            irect = text_area.copy()
+            irect.height = itemsize
+            for i, t in enumerate(self.list[start: start + self.page_size]):
+                if self.selected == i + start:
+                    if isinstance(self.select, Region):
+                        self.select.draw(irect, t)
+                    else:
+                        self.fonts.draw(t, *irect.topleft, self.select, 255,
+                                self.align, text_area)             
+                else:           
+                    self.fonts.draw(t, *irect.topleft, self.fontcolor, 255,
+                            self.align, text_area)
+                irect.y += self.itemsize
 
     def update(self):
         updated = False
@@ -142,10 +173,13 @@ class Region:
         return self._text
     @text.setter
     def text(self, val):
-        self.fonts.load(self.font, self.fontsize)
-        text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
-        self._text = self.fonts._split_lines(val, text_area)
-        print(f'text set to {self._text}')
+        if self.wrap:
+            self.fonts.load(self.font, self.fontsize)
+            text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
+            self._text = self.fonts._split_lines(val, text_area)
+        else:
+            self._text = val.split('\n')
+        print(f'text set to:\n{self._text}')
 
     def _draw_rect(self, rect, color, round=0):        
         self.renderer.fill(rect.sdl(), color)
