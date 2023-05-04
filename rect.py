@@ -54,6 +54,8 @@ class Rect:
         Return a new rect using bottom and right coordinates instead
         of width and height'''
         return Rect(x, y, x2-x, y2-y)
+    def from_sdl(r):
+        return Rect(r.x, r.y, r.w, r.h)
 
     def inflate(self, x, y=None):
         '''
@@ -100,6 +102,42 @@ class Rect:
         'Update myself with new position and size'
         self.x = x; self.width = w
         self.y = y; self.height = h
+
+    def clip(self, other):
+        'Return copy of self cropped to fit inside other'
+        # LEFT
+        if self.x >= other.x and self.x < other.x + other.width:
+            x = self.x
+        elif other.x >= self.x and other.x < self.x + self.width:
+            x = other.x
+        else:
+            return Rect(self.x, self.y, 0,0)
+
+        # RIGHT
+        if self.x + self.width > other.x and self.x + self.width <= other.x + other.width:
+            w = self.x + self.width - x
+        elif other.x + other.width > self.x and other.x + other.width <= self.x + self.width:
+            w = other.x + other.width - x
+        else:
+            return Rect(self.x, self.y, 0,0)
+
+        # TOP
+        if self.y >= other.y and self.y < other.y + other.height:
+            y = self.y
+        elif other.y >= self.y and other.y < self.y + self.height:
+            y = other.y
+        else:
+            return Rect(self.x, self.y, 0,0)
+
+        # BOTTOM
+        if self.y + self.height > other.y and self.y + self.height <= other.y + other.height:
+            h = self.y + self.height - y
+        elif other.y + other.height > self.y and other.y + other.height <= self.y + self.height:
+            h = other.y + other.height - y
+        else:
+            return Rect(self.x, self.y, 0,0)
+
+        return Rect(x, y, w, h)
 
     @property
     def w(self):

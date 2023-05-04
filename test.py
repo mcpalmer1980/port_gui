@@ -2,7 +2,7 @@ import sys, os, random, json
 import sdl2, sdl2.ext
 from rect import Rect
 from tfont import FontManager
-from gui import ImageManager, Region
+from gui import ImageManager, Region, Image
 
 DEFAULT_SIZE= 480, 320
 desc = "Dungeon & Dragons: Warriors of the Eternal Sun is set in the world of Mystara, a setting of the Dungeons & Dragons game. The characters find themselves in a strange, red-hued world in which the horizon slopes upward in all directions, eventually vanishing into a crimson haze at the limits of sight. Their mission is to find and make allies in this new world or else the kingdom and its culture will perish."
@@ -22,20 +22,26 @@ def main():
     tf = fonts.load('font.ttf', 25)
     f = fonts.load('font2.ttf', 30)
 
-    
-
+    Image.renderer = screen
     images = ImageManager(screen)
     ipath = '/home/michael/Roms/genesis/media/images'
     files = [os.path.join(ipath,f) for f in os.listdir(ipath)[:15] if f.endswith('.png')]
     for fn in files:
         images.load(fn)
-    texture = images.load(random.choice(images.cache))
+    image = images.load(random.choice(images.cache))
 
     title = Region(screen, d['title'], images, fonts)
     title.list = game_list
     select = Region(screen, d['list'], images, fonts)
     title.select = select
     window.show()
+
+    d = dict(
+        arrow_r=(11, 559, 42, 42,1,0,29),
+        arrow_l=(11, 559, 42, 42),
+        bar=(64, 547, 62, 62))
+    atlas = images.load_atlas('nine.png', d)
+    arrow = images.load('arrow_r')
 
     inp = InputHandler()
 
@@ -61,13 +67,14 @@ def main():
 
         if not running % 90:
             update = True
-            texture = images.load(random.choice(images.cache))
+            image = images.load(random.choice(images.cache))
 
         if update:
             update = False
             screen.clear()
-            screen.copy(texture)
+            #image.draw()
             title.draw()
+
 
         screen.present()
         window.refresh()
