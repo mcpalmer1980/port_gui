@@ -1,0 +1,59 @@
+Region Options
+    FILL AND OUTLINE
+    area: 4-tuple of pixels or screen percent(0.0-1.0),
+    fill: 3-tuple fill color
+    outline: 3-typle outline color
+    thickness: int outline thickness,
+    roundness: int outline roundness,
+    border: int border around text x or x&y
+    bordery: int top/bottom border around text
+
+    IMAGE RENDERING
+    image: filename for image
+    imagesize: 2-tuple (w,h) scale to this size
+    imagemode: 'fit', 'stretch', 'repeat', None or ''
+    imagealign: same options as text align, but for image
+    patch: 4-tuple left, top, right, bottom edges for 9-patch rendering
+    pattern: bool image is a base64 string
+
+    TEXT RENDERING
+    font: filename for font
+    fontsize: int size of font
+    fontcolor: 3-tuple font color
+    text: text string (may be multiline)
+    wrap: allow multiline text wraping
+    linespace: int extra space between lines
+    align: text alignment (topleft, topright, midtop
+                           midleft, center, midright
+                           bottomleft, midbottom, bottomright)
+
+    LIST RENDERING
+    list: list of items (ignores wrap, allows navigation)
+    imagelist: list of filenames or Image objects
+    ilistalign: alignment for list images
+    itemsize: item height for vertical lists (width for horiz ones)
+    selected: 3-tuple color for selected item, or a Region for rendering it
+    scrollable: bool allow up/down to scroll wrapped text
+    autoscroll: int speed of auto scroll or 0 disables
+
+CLASSES
+FontManager
+Image
+ImageManager
+InputHandler
+Rect
+Region
+
+button = NinePatch(texture, sr(20,20,20,20), sr(0, 0, 320, 167))
+dialog = NinePatch(texture, sr(32,32,32,32), sr(0,169, 320, 161))
+box = NinePatch(texture, sr(22,24,22,24), sr(0, 332, 320, 106))
+box_fill = NinePatch(texture, sr(22,24,22,24), sr(0, 439, 320, 106))
+
+arrow_r, arrow_l, circle, bar, self.barb, self.barf = fetch_images(
+	texture, rects=(
+		sr(11, 559, 42, 42),
+		sr(11, 559, 42, 42),
+		sr(64, 547, 62, 62),
+		sr(373,225, 222, 18),
+		sr(444, 0, 200,50),
+		sr(444, 51, 200, 50)))

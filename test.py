@@ -36,11 +36,7 @@ def main():
     title.select = select
     window.show()
 
-    d = dict(
-        arrow_r=(11, 559, 42, 42,1,0,29),
-        arrow_l=(11, 559, 42, 42),
-        bar=(64, 547, 62, 62))
-    atlas = images.load_atlas('nine.png', d)
+    atlas = images.load_atlas('nine.png', d['nine.png'])
     arrow = images.load('arrow_r')
 
     inp = InputHandler()
@@ -71,8 +67,10 @@ def main():
 
         if update:
             update = False
-            screen.clear()
-            #image.draw()
+            #screen.clear()
+            image.draw()
+            arrow.draw_at(30,30)
+            atlas['circle'].draw_at(30,60)
             title.draw()
 
 
@@ -90,19 +88,30 @@ KEY_MAP = {
     sdl2.SDLK_LEFT: 'left',
     sdl2.SDLK_KP_ENTER: 'start',
     sdl2.SDLK_RETURN: 'start',
+    sdl2.SDLK_ESCAPE: 'select',
     sdl2.SDLK_SPACE: 'A',
     sdl2.SDLK_z: 'A',
-    sdl2.SDLK_x: 'B'}
+    sdl2.SDLK_x: 'B',
+    sdl2.SDLK_a: 'X',
+    sdl2.SDLK_s: 'Y',
+    sdl2.SDLK_LCTRL: 'L',
+    sdl2.SDLK_LALT: 'R'}
 BUTTON_MAP = {11: 'up', 12: 'down',
            13: 'left', 14: 'right',
-           0: 'A', 1: 'B', 6: 'start'}
-
+           0: 'A', 1: 'B', 2: 'X', 3: 'Y',
+           9: 'L', 10: 'R',
+           4: 'select', 6: 'start'}
+AXIS_MAP = {
+    (1,-1): 'up',
+    (1,1): 'down',
+    (0,-1): 'left',
+    (0,1): 'right' }
 
 class InputHandler():
     REPEAT_RATE = 5
     REPEAT_DELAY = 10
     CAN_REPEAT = ('up', 'down', 'right', 'left')
-    AXIS_MOD = 2 ** 15
+    AXIS_MOD = 2 ** 15 * 1.2
     def __init__(self):
         sdl2.ext.common.init(controller=True)
         try:
@@ -136,60 +145,46 @@ class InputHandler():
                 if not self.keys.get(key):
                     self.keys[key] = True
                     if key in KEY_MAP:
-                        self.last_press = self.keys, key
                         self.pressed = KEY_MAP[key]
+                        self.last_press = self.keys, key, self.pressed
                         self.held_for = -self.REPEAT_DELAY
-                    #print('pressed', key)
             elif e.type == sdl2.SDL_KEYUP:
                 key = e.key.keysym.sym
                 self.keys[key] = False
-                #print('released', key)
 
             # BUTTONS
             elif e.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
                 butt = e.cbutton.button
                 self.buttons[butt] = True
                 if butt in BUTTON_MAP:
-                    self.last_press = self.buttons, butt
                     self.pressed = BUTTON_MAP[butt]
+                    self.last_press = self.buttons, butt, self.pressed
                     self.held_for = -self.REPEAT_DELAY
-                #print('pressed', butt)
             elif e.type == sdl2.SDL_CONTROLLERBUTTONUP:
                 butt = e.cbutton.button
                 self.buttons[butt] = False
-                #print('released', butt)
 
             elif e.type == sdl2.SDL_CONTROLLERAXISMOTION:
-                self.axes[e.caxis.axis] = e.caxis.value / self.AXIS_MOD
-                print(self.axes[e.caxis.axis])
+                a = e.caxis.axis
+                v = round(e.caxis.value / self.AXIS_MOD)
+                if (a,v) in AXIS_MAP:
+                    if v and self.axes.get(a) != v:
+                        self.pressed = AXIS_MAP[(a,v)]
+                        self.last_press = self.axes, a, self.pressed 
+                        self.held_for = -self.REPEAT_DELAY
+                self.axes[a] = v
             
         # HANDLE KEY REPEATS
         if self.last_press:
             pressed = None
-            m, k = self.last_press
-            if m.get(k):
+            m, k, b = self.last_press
+            
+            if b in self.CAN_REPEAT and m.get(k):
                 self.held_for += 1
                 if self.held_for > self.REPEAT_RATE:
                     self.held_for = 0
-                    if m == self.keys:
-                        pressed = KEY_MAP[k]
-                    elif m == self.buttons:
-                        pressed = BUTTON_MAP[k]
-                    if pressed in self.CAN_REPEAT:
-                        self.pressed = pressed
+                    self.pressed = b
 
-
-def trace(e, l=0):
-    for i in dir(e):
-        if not i.startswith('_'):
-            print(i, getattr(e, i))
-
-    print()
-
-        #trace(i)
-
-
-#SDLK_UP,
 
 if __name__ == "__main__":
     main()

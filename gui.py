@@ -1,15 +1,18 @@
 import os, sys
 import sdl2, sdl2.ext
 from rect import Rect
+try:
+    import sdl2.sdlgfx as sdlgfx
+except:
+    sdlgfx = False
 
 '''
 TODO
-    Rounded rects (sdl2_gfx, manually)
     Patches (9-patched image rendering)
     Imagelist (separate image for each list item, with alignment)
     Text animation (rotation, scaling, color changing)
-    tiled image rendering
-    Map controller axes to inp.pressed'''
+    Tiled image rendering
+    Deque the cache list'''
 
 '''
     FILL MODE
@@ -154,7 +157,7 @@ class ImageManager():
         texture = sdl2.ext.renderer.Texture(self.screen, surf)
         for name, item in atlas.items():
             r = item[:4] 
-            flip_x, flip_y, angle, *_ = item[4:] + (0,0,0)
+            flip_x, flip_y, angle, *_ = list(item[4:] + [0,0,0])
             im = Image(texture, r)
             im.flip_x = flip_x
             im.flip_y = flip_y
@@ -190,7 +193,7 @@ class Region:
         self.fonts = fonts
 
         self.area = self._verify_rect('area')
-        self.color = self._verify_color('color', (0,0,0))
+        self.fill = self._verify_color('fill', (0,0,0))
         self.outline = self._verify_color('outline', optional=True)
         self.thickness = self._verify_int('thickness', 0)
         self.roundness = self._verify_int('roundness', 0)
@@ -198,7 +201,6 @@ class Region:
         self.bordery = self._verify_int('bordery', self.borderx) or 0
 
         self.image = self._verify_file('image', optional=True)
-        self.imagerect = 0 ## TODO
         self.imagesize = self._verify_ints('imagesize', 2, None, optional=True)
         self.imagemode = self._verify_option('imagemode', 
                 ('fit', 'stretch', 'repeat', None), 'fit')
@@ -234,23 +236,36 @@ class Region:
         '''
         Draw all features of this Region'''
 
-        area = area or self.area
-        # Draw Rect and outline
-        if self.outline:
-            self._draw_rect(area, self.outline, self.roundness)
-            r = area.inflated(-self.thickness*2)
-            self._draw_rect(r, self.color, self.roundness)
-        else:
-            self._draw_rect(r, self.color, self.roundness)
+        area = area or self.area.copy()
 
-        # Draw image
+        # FILL AND OUTLINE
+        if self.fill:
+            if self.roundness and sdlgfx:
+                sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
+                    area.x, area.y, area.right, area.bottom,
+                    self.roundness, *self.fill, 255)
+            else:
+                self.renderer.fill(area.sdl(), self.fill)
+
+        if self.outline:
+            r = area.sdl()
+            for _ in range(self.thickness-1):
+                if self.roundness and sdlgfx:
+                    sdlgfx.roundedRectangleRGBA(self.renderer.sdlrenderer,
+                        r.x, r.y, r.x+r.w, r.y+r.h,
+                        self.roundness, *self.outline, 255)
+                else:
+                    self.renderer.draw_rect(r, self.outline)
+                r.x += 1; r.w -= 2
+                r.y += 1; r.h -= 2
+            area.size = area.w-self.thickness, area.h-self.thickness
+ 
+        # RENDER IMAGE
         if self.image:
             image = self.images.load(self.image)
             dest = Rect.from_sdl(image.srcrect)
             if self.imagesize:
                 dest.size = self.imagesize
-            
-            print('imagemode', self.imagemode)
             
             if self.imagemode == 'fit':
                 dest.fit(area)
@@ -258,21 +273,16 @@ class Region:
                     w = getattr(area, self.imagealign)
                     setattr(dest, self.imagealign, w)
                 image.draw_in(dest.tuple())
-            else:
-                print('not fit', dest)
-                dest.topleft = area.topleft
-                print(area, dest)
-                image.draw_in(dest.tuple())
-
-            '''elif self.imagemode == 'stretch':
+            elif self.imagemode == 'stretch':
                 image.draw_in(area.tuple())
             elif self.imagemode == 'repeat':
-                pass
+                pass # TODO
+
             else:
                 dest.topleft = area.topleft
-                image.draw_in(dest)'''
+                image.draw_in(dest.clip(area).tuple())
 
-        # Draw text
+        # RENDER TEXT
         text_area = area.inflated(-self.borderx*2, -self.bordery*2)
         if self.font and text:
             x, y = getattr(text_area, self.align, text_area.topleft)
@@ -289,6 +299,7 @@ class Region:
                 y += self.fonts.draw(l, x, y, self.fontcolor, 255,
                         self.align, text_area).height + self.linespace
 
+        # RENDER LIST
         elif self.font and self.list:
             itemsize = self.itemsize or self.font.height + self.bordery
             self.page_size = area.height // itemsize

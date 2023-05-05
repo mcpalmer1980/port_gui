@@ -3,21 +3,33 @@
     {
         "display_size": [640, 480]
     },
+    "nine.png":
+    {
+        "button": [0,0,320,167],
+        "dialog": [0,169,320,161],
+        "box": [0,332,320,106],
+        "boxfill": [0,439,320,106],
+        "arrow_r": [11,559,42,42],
+        "arrow_l": [11,559,42,42,1],
+        "circle": [64,547,62,62],
+        "bar": [373,225,222,18]
+    },
     "title":
     {
-        "area": [2,0.5,0.5,0.5],
-        "color": [0,0,255],
+        "area": [0,0.5,0.75,0.5],
+        "fill": [0,0,255],
         "outline": [0,0,0],
         "thickness": 4,
         "roundness": 0,
         "border": 4,
         "bordery": 4,
-        "image": "image.png",
-        "imagemode": "repeat",
-        "imagesize": [400,100],
+        "image": null,
+        "imagemode": "fit",
+        "imagesize": null,
         "pattern": "",
         "repeat": false,
-        "imagealign": "midright",
+        "patch": [32,32,32,32],
+        "imagealign": null,
         "font": "font.ttf",
         "fontsize": 16,
         "fontcolor": [255,255,255],
