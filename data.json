@@ -50,7 +50,7 @@
         "outline": [0,0,0],
         "pattern": "",
         "repeat": 0,
-        "stretch": 0,
+        "roundness": 6,
         "font": "font.ttf",
         "fontsize": 18,
         "fontcolor": [255,255,255],

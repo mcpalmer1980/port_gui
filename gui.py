@@ -8,14 +8,12 @@ except:
 
 '''
 TODO
-    Patches (9-patched image rendering)
     Imagelist (separate image for each list item, with alignment)
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
     Deque the cache list
     Alpha colors for fill and outline
     Alpha for images
-    Allow Patch and image
 '''
 
 '''
@@ -35,6 +33,7 @@ TODO
     imagemode: 'fit', 'stretch', 'repeat', None or ''
     imagealign: same options as text align, but for image
     patch: 4-tuple left, top, right, bottom edges for 9-patch rendering
+    pimage: filename or image to use for patch if different than image
     pattern: bool image is a base64 string
 
     TEXT RENDERING
@@ -214,6 +213,10 @@ class Region:
                 ('fit', 'stretch', 'repeat', None), 'fit')
         self.imagealign = self._verify_option('imagealign', Rect.POINTS, None)
         self.patch = self._verify_ints('patch', 4, optional=True)
+        self.pimage = self.images.load(data.get('pimage'))
+        if self.patch and not self.pimage:
+            self.pimage = self.image
+            self.image = None
 
         self.pattern = False
         
@@ -248,8 +251,8 @@ class Region:
         area = area or self.area.copy()
 
         # FILL AND OUTLINE  
-        if self.patch and self.image:
-            self._draw_patch(area, self.image)
+        if self.patch:
+            self._draw_patch(area, self.pimage)
             area = Rect.from_corners(
                 area.x + self.patch[0], area.y + self.patch[1], 
                 area.right - self.patch[2], area.bottom - self.patch[3])
@@ -344,6 +347,7 @@ class Region:
             for i, t in enumerate(self.list[start: start + self.page_size]):
                 if self.selected == i + start:
                     if isinstance(self.select, Region):
+                        #r = irect.inflated(self.borderx*2, self.bordery*2)
                         self.select.draw(irect, t)
                     else:
                         self.fonts.draw(t, *irect.topleft, self.select, 255,
