@@ -30,6 +30,7 @@ def main():
         images.load(fn)
     image = images.load(random.choice(images.cache))
 
+    atlas = images.load_atlas('nine.png', d['nine.png'])
     title = Region(screen, d['title'], images, fonts)
     title.list = game_list
     select = Region(screen, d['list'], images, fonts)

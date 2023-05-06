@@ -12,7 +12,11 @@ TODO
     Imagelist (separate image for each list item, with alignment)
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
-    Deque the cache list'''
+    Deque the cache list
+    Alpha colors for fill and outline
+    Alpha for images
+    Allow Patch and image
+'''
 
 '''
     FILL MODE
@@ -52,7 +56,7 @@ TODO
     selected: 3-tuple color for selected item, or a Region for rendering it
     scrollable: bool allow up/down to scroll wrapped text
     autoscroll: int speed of auto scroll or 0 disables
-    '''
+'''
 
 
 class Image():
@@ -137,15 +141,19 @@ class ImageManager():
             return self.images[fn]
         elif fn in self.images:
             return self.images[fn]
+
+        elif isinstance(fn, str) and os.path.isfile(fn):
+            try:
+                surf = sdl2.ext.image.load_img(fn)
+            except:
+                return
+            texture = sdl2.ext.renderer.Texture(self.screen, surf)
+            self.textures[fn] = texture
+            self.images[fn] = Image(texture)
+            self.cache.insert(0, fn)
+            self._clean()
+            return self.images[fn]
         
-        surf = sdl2.ext.image.load_img(fn)
-        texture = sdl2.ext.renderer.Texture(self.screen, surf)
-        self.textures[fn] = texture
-        self.images[fn] = Image(texture)
-        self.cache.insert(0, fn)
-        self._clean()
-        return self.images[fn]
-    
     def load_atlas(self, fn, atlas):
         '''
         Load image fn, create Images from atlas dict, create
@@ -200,12 +208,13 @@ class Region:
         self.borderx = self._verify_int('border', 0)
         self.bordery = self._verify_int('bordery', self.borderx) or 0
 
-        self.image = self._verify_file('image', optional=True)
+        self.image = self.images.load(data.get('image'))      # TODO self._verify_file('image', optional=True)
         self.imagesize = self._verify_ints('imagesize', 2, None, optional=True)
         self.imagemode = self._verify_option('imagemode', 
                 ('fit', 'stretch', 'repeat', None), 'fit')
         self.imagealign = self._verify_option('imagealign', Rect.POINTS, None)
-        self.patch = 0 ## TODO
+        self.patch = self._verify_ints('patch', 4, optional=True)
+
         self.pattern = False
         
         # TODO figure out how to use default/system fonts
@@ -238,8 +247,31 @@ class Region:
 
         area = area or self.area.copy()
 
-        # FILL AND OUTLINE
-        if self.fill:
+        # FILL AND OUTLINE  
+        if self.patch and self.image:
+            self._draw_patch(area, self.image)
+            area = Rect.from_corners(
+                area.x + self.patch[0], area.y + self.patch[1], 
+                area.right - self.patch[2], area.bottom - self.patch[3])
+
+        elif self.fill and self.outline:
+            if self.roundness and sdlgfx:
+                sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
+                    area.x, area.y, area.right, area.bottom,
+                    self.roundness, *self.outline, 255)
+            area.inflate(-self.thickness)               
+            if self.roundness and sdlgfx:
+                sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
+                    area.x, area.y, area.right, area.bottom,
+                    self.roundness, *self.fill, 255)
+
+            else:
+                self.renderer.fill(area.sdl(), self.outline)
+                area.inflate(-self.thickness)                
+                self.renderer.fill(area.sdl(), self.fill)
+
+
+        elif self.fill:
             if self.roundness and sdlgfx:
                 sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
                     area.x, area.y, area.right, area.bottom,
@@ -247,7 +279,7 @@ class Region:
             else:
                 self.renderer.fill(area.sdl(), self.fill)
 
-        if self.outline:
+        elif self.outline:
             r = area.sdl()
             for _ in range(self.thickness-1):
                 if self.roundness and sdlgfx:
@@ -261,8 +293,8 @@ class Region:
             area.size = area.w-self.thickness, area.h-self.thickness
  
         # RENDER IMAGE
-        if self.image:
-            image = self.images.load(self.image)
+        if self.image and not self.patch:
+            image = self.image #s.load(self.image)
             dest = Rect.from_sdl(image.srcrect)
             if self.imagesize:
                 dest.size = self.imagesize
@@ -345,6 +377,61 @@ class Region:
 
     def _draw_rect(self, rect, color, round=0):        
         self.renderer.fill(rect.sdl(), color)
+
+
+    def _draw_patch(self, area, image):
+        target = area.copy()
+        bounds = Rect.from_sdl(image.srcrect)
+        texture = image.texture
+
+        self.renderer.copy(texture,  # TOP
+    			srcrect=(bounds.left, bounds.top, self.patch[0], self.patch[1]),
+    			dstrect=(target.left, target.top, self.patch[0], self.patch[1]) )
+        self.renderer.copy(texture,  # LEFT
+    		srcrect=(bounds.left, bounds.top+self.patch[1], self.patch[0],
+    				bounds.height-self.patch[1]-self.patch[3]),
+    		dstrect=(target.left, target.top+self.patch[1], self.patch[0],
+    				target.height-self.patch[1]-self.patch[3]) )
+        self.renderer.copy(texture,  # BOTTOM-LEFT
+    		srcrect=(bounds.left, bounds.bottom-self.patch[3],
+    				self.patch[0], self.patch[3]),
+    		dstrect=(target.left, target.bottom-self.patch[3],
+    				self.patch[0], self.patch[3]) )
+
+        self.renderer.copy(texture, # TOP-RIGHT
+            srcrect=(bounds.right-self.patch[2], bounds.top,
+                    self.patch[2], self.patch[1]),
+            dstrect=(target.right-self.patch[2], target.top,
+                    self.patch[2], self.patch[1]) )		
+        self.renderer.copy(texture, # RIGHT
+            srcrect=(bounds.right-self.patch[2], bounds.top+self.patch[1],
+                    self.patch[2],bounds.height-self.patch[3]-self.patch[1]),
+            dstrect=(target.right-self.patch[2], target.top+self.patch[1],
+                    self.patch[2], target.height-self.patch[3]-self.patch[1]) )
+        self.renderer.copy(texture, # BOTTOM-RIGHT
+            srcrect=(bounds.right-self.patch[2], bounds.bottom-self.patch[3],
+                    self.patch[2], self.patch[3]),
+            dstrect=(target.right-self.patch[2], target.bottom-self.patch[3],
+                    self.patch[2], self.patch[3]) ) 
+
+        self.renderer.copy(texture, # TOP
+            srcrect=(bounds.left+self.patch[0], bounds.top,
+                    bounds.width-self.patch[0]-self.patch[2], self.patch[1]),
+            dstrect=(target.left+self.patch[0], target.top,
+                    target.width-self.patch[0]-self.patch[2], self.patch[1]) )
+        self.renderer.copy(texture, # CENTER
+            srcrect=(bounds.left+self.patch[0], bounds.top+self.patch[1],
+                    bounds.width-self.patch[2]-self.patch[0],
+                    bounds.height-self.patch[1]-self.patch[3]),
+            dstrect=(target.left+self.patch[0], target.top+self.patch[1],
+                    target.width-self.patch[2]-self.patch[0],
+                    target.height-self.patch[1]-self.patch[3]) )
+        self.renderer.copy(texture, # BOTTOM
+            srcrect=(bounds.left+self.patch[0], bounds.bottom-self.patch[3],
+                    bounds.width-self.patch[0]-self.patch[2], self.patch[3]),
+            dstrect=(target.left+self.patch[0], target.bottom-self.patch[3],
+                    target.width-self.patch[0]-self.patch[2], self.patch[3]) )		
+
 
     def _verify_rect(self, name, default=None, optional=False):
         # AREA
@@ -447,6 +534,10 @@ class Region:
     def _verify_ints(self, name, count, default=None, optional=False):
         val = self._dict.get(name, default)
         if val == None and optional: return None
+
+        print(self._dict)
+        print(name, count, val)
+        
 
         if not isinstance(val, (list, tuple)):
             raise Exception(f'{name} is not a list')

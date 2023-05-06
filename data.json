@@ -16,14 +16,14 @@
     },
     "title":
     {
-        "area": [0,0.5,0.75,0.5],
+        "area": [0,0.45,0.75,0.55],   
         "fill": [0,0,255],
         "outline": [0,0,0],
-        "thickness": 4,
-        "roundness": 0,
+        "thickness": 8,
+        "roundness": 8,
         "border": 4,
         "bordery": 4,
-        "image": null,
+        "image": "dialog",
         "imagemode": "fit",
         "imagesize": null,
         "pattern": "",
