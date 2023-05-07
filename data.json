@@ -14,6 +14,25 @@
         "circle": [64,547,62,62],
         "bar": [373,225,222,18]
     },
+    "background":
+    {
+        "area": [0.0,0.9,1.0,1.0],
+        "fill": [100,100,100]
+    },
+    "mainlist":
+    {
+        "area": [0.1, 0.1, 0.4, 0.8],
+        "fill": [50,50,50],
+        "roundness": 20,
+        "thickness": 6
+    },
+    "maininfo":
+    {
+        "area": [0.6, 0.1, 0.4, 0.8],
+        "fill": [50,50,50],
+        "roundness": 20,
+        "thickness": 6
+    },
     "title":
     {
         "area": [0,0.45,0.75,0.55],   
@@ -30,18 +49,20 @@
         "repeat": false,
         "patch": [32,32,32,32],
         "imagealign": null,
-        "font": "font.ttf",
-        "fontsize": 16,
+        "font": "Roboto.ttf",
+        "fontsize": 32,
         "fontcolor": [255,255,255],
         "text": null,
         "wrap": false,
         "linespace": 0,
-        "list": null,
+        "list": [["Left", "arrow_l"], ["Right", null, "arrow_r"]],
         "itemsize": 30,
         "selected": [0,0,0],
         "align": "topleft",
         "scrollable": true,
-        "autoscroll": null
+        "autoscroll": null,
+        "bar": null,
+        "barspace" : 20
     },
     "list":
     {
@@ -50,6 +71,7 @@
         "outline": [0,0,0],
         "pattern": "",
         "repeat": 0,
+        "align": "midleft",
         "roundness": 6,
         "font": "font.ttf",
         "fontsize": 18,

@@ -1,6 +1,22 @@
+'''
+mypyGUI is a simple, low level gui module that handles input and draws multiple
+rectangular Regions using hardware GPU rendering. Written in python, mypyGUI
+uses pySDL2, a low level SDL2 wrapper also written in pure python with no other
+dependencies.
+
+This module is designed to produce full screen GUIs for lower powered
+GNU/Linux based retro handhelds using game controller style input, but it may
+prove useful on other hardware.
+
+CLASSES:
+    Region: draws a rect region with backround, outline, image, lists, etc
+    InputHandler: handles controller and keyboard input, mapping to simple
+        string events such as 'up', 'left', 'A', and 'start'
+'''
 import os, sys
 import sdl2, sdl2.ext
-from rect import Rect
+from utility import Rect, Image, ImageManager, FontManager
+
 try:
     import sdl2.sdlgfx as sdlgfx
 except:
@@ -8,12 +24,15 @@ except:
 
 '''
 TODO
-    Imagelist (separate image for each list item, with alignment)
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
     Deque the cache list
     Alpha colors for fill and outline
     Alpha for images
+
+    ??Imagelist (separate image for each list item, with alignment)
+        ^^ Bar list enough??
+
 '''
 
 '''
@@ -56,130 +75,6 @@ TODO
     scrollable: bool allow up/down to scroll wrapped text
     autoscroll: int speed of auto scroll or 0 disables
 '''
-
-
-class Image():
-    renderer = None
-    '''
-    Class that draws holds the source rect and draws images
-    from a Texture'''
-
-    def __init__(self, texture, srcrect=None, renderer=None):
-        renderer = renderer or Image.renderer
-        if not renderer:
-            raise Exception('No renderer context provided')
-        Image.renderer = Image.renderer or renderer
-
-        self.texture = texture
-        if isinstance(srcrect, Rect):
-            self.srcrect = srcrect.sdl()
-        elif isinstance(srcrect, (list, tuple)) and len(srcrect)==4:
-            self.srcrect = sdl2.SDL_Rect(*srcrect)
-        elif isinstance(srcrect, (sdl2.SDL_Rect)):
-            self.srcrect =srcrect
-        elif srcrect == None:
-            self.srcrect = sdl2.SDL_Rect(0,0, *texture.size)
-        else:
-            raise Exception('srcrect not a supported type')
-
-        self.x = self.y = 0
-        self.flip_x = self.flip_y = 0
-        self.angle = 0
-        self.center = self.srcrect.w//2, self.srcrect.h//2
-        self.dstrect = Rect.from_sdl(self.srcrect).fitted(
-                    Rect(0,0, *self.renderer.logical_size)).sdl()
-
-   
-    def draw_at(self, x, y, angle=0, flip_x=None, flip_y=None, center=None):
-        center = center or self.center
-        angle = angle or self.angle
-        if flip_x == None and flip_y == None:
-            flip = 1 * bool(self.flip_x) | 2 * bool(self.flip_y)
-        else:
-            flip = 1 * bool(flip_x) | 2 * bool(flip_y)
-
-        self.renderer.copy(self.texture, self.srcrect,
-                dstrect=(x, y), angle=angle, flip=flip, center=center)
-
-    def draw_in(self, dest, angle=0, flip_x=None, flip_y=None, center=None):
-        center = center or self.center
-        angle = angle or self.angle
-        if flip_x == None and flip_y == None:
-            flip = 1 * bool(self.flip_x) | 2 * bool(self.flip_y)
-        else:
-            flip = 1 * bool(flip_x) | 2 * bool(flip_y)
-
-        self.renderer.copy(self.texture, self.srcrect,
-                dstrect=dest, angle=angle, flip=flip, center=center)
-
-    def draw(self):
-        flip = 1 * bool(self.flip_x) | 2 * bool(self.flip_y)
-        self.renderer.copy(self.texture, self.srcrect, 
-                dstrect=self.dstrect, angle=self.angle,
-                flip=flip, center=self.center)
-
-
-class ImageManager():
-    '''
-    Load images into Textures and cache them for later use'''
-    
-    MAX_IMAGES = 20
-    def __init__(self, screen):
-        'Pass a pySLD2.ext.Renderer to render into'
-        self.screen = screen
-        self.images = {}
-        self.textures = {}
-        self.cache = []
-    
-    def load(self, fn, area=None):
-        '''
-        Load an image file into a Texture or receive a cached Texture'''
-        if fn in self.cache:
-            i = self.cache.index(fn)
-            self.cache.insert(0, self.cache.pop(i))
-            return self.images[fn]
-        elif fn in self.images:
-            return self.images[fn]
-
-        elif isinstance(fn, str) and os.path.isfile(fn):
-            try:
-                surf = sdl2.ext.image.load_img(fn)
-            except:
-                return
-            texture = sdl2.ext.renderer.Texture(self.screen, surf)
-            self.textures[fn] = texture
-            self.images[fn] = Image(texture)
-            self.cache.insert(0, fn)
-            self._clean()
-            return self.images[fn]
-        
-    def load_atlas(self, fn, atlas):
-        '''
-        Load image fn, create Images from atlas dict, create
-        named shortcut in image dict
-        {'string_name': x, y, w, h} '''
-
-        images = {}
-        surf = sdl2.ext.image.load_img(fn)
-        texture = sdl2.ext.renderer.Texture(self.screen, surf)
-        for name, item in atlas.items():
-            r = item[:4] 
-            flip_x, flip_y, angle, *_ = list(item[4:] + [0,0,0])
-            im = Image(texture, r)
-            im.flip_x = flip_x
-            im.flip_y = flip_y
-            im.angle = angle
-            if name in images:
-                raise Exception('Image names must be unique')
-            self.images[name] = im
-            images[name] = im
-        return images
-    
-    def _clean(self):
-        for fn in self.cache[self.MAX_IMAGES:]:
-            texture = self.textures.pop(fn)
-            texture.destroy()
-        self.cache = self.cache[:self.MAX_IMAGES]
 
 class Region:
     '''
@@ -229,14 +124,17 @@ class Region:
         self.linespace = self._verify_int('linespace', 0, True)
         self.align = self._verify_option('align', Rect.POINTS, 'topleft')
 
-        self.list = self._verify_string_list('list', optional=True)
+        self.list = self._verify_list('list', optional=True)
         self.imagelist = 0 ## TODO
         self.ilistalign = 0 ## TODO
         self.itemsize = self._verify_int('itemsize', None, True)
         self.select = self._verify_color('selected', optional=True)
 
+
         self.scrollable = self._verify_bool('scrollable', False, True)
         self.autoscroll = self._verify_int('autoscroll', 0, True)
+
+        self.bar = self._verify_bar('bar', optional=True)
 
         if self._text and self.list:
             raise Exception('Cannot define text and a list')
@@ -244,11 +142,12 @@ class Region:
         self.life = 0
         self.selected = 0
 
-    def draw(self, area=None, text=None):
+    def draw(self, area=None, text=None, image=None):
         '''
         Draw all features of this Region'''
 
         area = area or self.area.copy()
+        image = image or self.image
 
         # FILL AND OUTLINE  
         if self.patch:
@@ -272,7 +171,6 @@ class Region:
                 self.renderer.fill(area.sdl(), self.outline)
                 area.inflate(-self.thickness)                
                 self.renderer.fill(area.sdl(), self.fill)
-
 
         elif self.fill:
             if self.roundness and sdlgfx:
@@ -317,17 +215,27 @@ class Region:
                 dest.topleft = area.topleft
                 image.draw_in(dest.clip(area).tuple())
 
-        # RENDER TEXT
         text_area = area.inflated(-self.borderx*2, -self.bordery*2)
-        if self.font and text:
+        #draw_rect(text_area.sdl(), (0,0,0,255))
+
+        # RENDER BAR (toolbarish)
+        #bar = bar or self.bar
+        bar = self.bar
+        if self.font and bar:
+            self._draw_bar(text_area, bar)
+
+        # RENDER TEXT
+        elif self.font and text:
             x, y = getattr(text_area, self.align, text_area.topleft)
             self.fonts.draw(text, x, y, self.fontcolor, 255,
                     self.align, text_area).height + self.linespace
+
         elif self.font and self._text:
             pos = self.selected % len(self._text)
 
             self.fonts.load(self.font, self.fontsize)
             x, y = getattr(text_area, self.align, text_area.topleft)
+            #y += self.linespace // 2
             for l in self._text[pos:]:
                 if y + self.fonts.height > text_area.bottom:
                     break
@@ -345,16 +253,20 @@ class Region:
             irect = text_area.copy()
             irect.height = itemsize
             for i, t in enumerate(self.list[start: start + self.page_size]):
-                if self.selected == i + start:
+
+                if isinstance(t, (list, tuple)):
+                    bar = self._verify_bar(None, t, irect)
+                    self._draw_bar(irect, bar)
+                elif self.selected == i + start:
                     if isinstance(self.select, Region):
-                        #r = irect.inflated(self.borderx*2, self.bordery*2)
+                        r = irect.inflated(self.borderx*2, self.bordery*2)
                         self.select.draw(irect, t)
                     else:
-                        self.fonts.draw(t, *irect.topleft, self.select, 255,
-                                self.align, text_area)             
+                        self.fonts.draw(t, *irect.midleft, self.select, 255,
+                                'midleft', text_area)             
                 else:           
-                    self.fonts.draw(t, *irect.topleft, self.fontcolor, 255,
-                            self.align, text_area)
+                    self.fonts.draw(t,  *irect.midleft, self.fontcolor, 255,
+                            "midleft", text_area)
                 irect.y += self.itemsize
 
     def update(self):
@@ -379,8 +291,73 @@ class Region:
             self._text = val.split('\n')
         print(f'text set to:\n{self._text}')
 
-    def _draw_rect(self, rect, color, round=0):        
-        self.renderer.fill(rect.sdl(), color)
+    def _verify_bar(self, name, default=None, area=None, optional=True):
+        vals = self._dict.get(name, default)
+        if vals == None and optional: return None
+
+        if not isinstance(vals, (list, tuple)):
+            raise Exception("bar is not a list")
+        vals = [None if v == '' else v for v in vals]
+        if vals.count('None') > 1:
+            raise Exception('bar has more than one null value separator')
+
+        #self._text = None; self.list = None
+        #   area = area or self.area
+
+        if not area:
+            area = self.area
+            if self.patch:
+                area = Rect.from_corners(
+                    area.x + self.patch[0], area.y + self.patch[1], 
+                    area.right - self.patch[2], area.bottom - self.patch[3])
+            else:
+                area = area.inflated(-self.borderx*2, -self.bordery*2)
+
+        self.fonts.load(self.font, self.fontsize)
+        x = area.x
+        y = area.centery
+        space = getattr(self, 'barspace', 20)
+
+        items = left = []; right = []
+        for i, v in enumerate(vals):
+            im = v if isinstance(v, Image) else self.images.load(v)
+            if im:
+                dest = Rect.from_sdl(im.srcrect).fitted(area)
+                dest.x = x
+                x = dest.right + space
+                items.append((dest, im))
+            elif isinstance(v, str):
+                w = self.fonts.width(v)
+                dest = Rect(x, y, w, self.fonts.height)
+                dest.centery = area.centery
+                x = dest.right + space
+                items.append((dest, v))
+            elif v == None:
+                items = right
+            else:
+                raise Exception(f'bar item {i}({v}) not valid type')
+        x = area.right
+        for dest, item in right:
+            dest.right = x
+            x -= dest.width + space
+
+        return left + right
+
+        
+
+
+    def _draw_bar(self, area, bar):
+        self.renderer.blendmode = sdl2.SDL_BLENDMODE_BLEND
+        self.fonts.load(self.font, self.fontsize)
+
+        for dest, item in bar:
+            #self.renderer.draw_rect(dest.sdl(), (255,0,0,255))
+            if isinstance(item, Image):
+                item.draw_in(dest.sdl())
+            else:
+                x, y = dest.midleft
+                self.fonts.draw(item, x, y,
+                        self.fontcolor, 255, 'midleft', area)
 
 
     def _draw_patch(self, area, image):
@@ -524,24 +501,22 @@ class Region:
         else:
             raise(f'{name} is not text')
     
-    def _verify_string_list(self, name, default=None, optional=False):
+    def _verify_list(self, name, default=None, optional=False):
         val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, (list, tuple)):
             raise Exception(f'{name} is not a list')
         for i, v in enumerate(val):
-            if not isinstance(v, str):
+            if isinstance(v, (list, tuple)):
+                self._verify_bar(None, v, Rect(0,0,100,100))
+            elif not isinstance(v, str):
                 raise Exception(f'{name}[{i}] == {v}, not a string')
         return val
     
     def _verify_ints(self, name, count, default=None, optional=False):
         val = self._dict.get(name, default)
         if val == None and optional: return None
-
-        print(self._dict)
-        print(name, count, val)
-        
 
         if not isinstance(val, (list, tuple)):
             raise Exception(f'{name} is not a list')
@@ -552,6 +527,109 @@ class Region:
                 raise Exception(f'{name}[{i}] == {v}, not an int')
         return val
 
+KEY_MAP = {
+    sdl2.SDLK_UP: 'up',
+    sdl2.SDLK_RIGHT: 'right',
+    sdl2.SDLK_DOWN: 'down',
+    sdl2.SDLK_LEFT: 'left',
+    sdl2.SDLK_KP_ENTER: 'start',
+    sdl2.SDLK_RETURN: 'start',
+    sdl2.SDLK_ESCAPE: 'select',
+    sdl2.SDLK_SPACE: 'A',
+    sdl2.SDLK_z: 'A',
+    sdl2.SDLK_x: 'B',
+    sdl2.SDLK_a: 'X',
+    sdl2.SDLK_s: 'Y',
+    sdl2.SDLK_LCTRL: 'L',
+    sdl2.SDLK_LALT: 'R'}
+BUTTON_MAP = {11: 'up', 12: 'down',
+           13: 'left', 14: 'right',
+           0: 'A', 1: 'B', 2: 'X', 3: 'Y',
+           9: 'L', 10: 'R',
+           4: 'select', 6: 'start'}
+AXIS_MAP = {
+    (1,-1): 'up',
+    (1,1): 'down',
+    (0,-1): 'left',
+    (0,1): 'right' }
+
+class InputHandler():
+    REPEAT_RATE = 5
+    REPEAT_DELAY = 10
+    CAN_REPEAT = ('up', 'down', 'right', 'left')
+    AXIS_MOD = 2 ** 15 * 1.2
+    def __init__(self):
+        sdl2.ext.common.init(controller=True)
+        try:
+            self.joy = sdl2.SDL_GameControllerOpen(0)
+        except:
+            self.joy = None
+        self.quit = False
+        self.buttons = {}
+        self.keys = {}
+        self.axes = {}
+        self.last_press = None
+        self.held_for = 0
+        self.selected = 0
+
+    def process(self, events):
+        self.pressed = None
+        for e in events:
+            if e.type == sdl2.SDL_QUIT:
+                self.quit = True
+            elif e.type == sdl2.SDL_CONTROLLERDEVICEADDED:
+                sdl2.ext.common.init(controller=True)
+                self.joy = sdl2.SDL_GameControllerOpen(0)
+                print('Controller connected')
+            
+            # KEYBOARD
+            elif e.type == sdl2.SDL_KEYDOWN:
+                key = e.key.keysym.sym
+                if key == sdl2.SDLK_ESCAPE:
+                    self.quit = True
+
+                if not self.keys.get(key):
+                    self.keys[key] = True
+                    if key in KEY_MAP:
+                        self.pressed = KEY_MAP[key]
+                        self.last_press = self.keys, key, self.pressed
+                        self.held_for = -self.REPEAT_DELAY
+            elif e.type == sdl2.SDL_KEYUP:
+                key = e.key.keysym.sym
+                self.keys[key] = False
+
+            # BUTTONS
+            elif e.type == sdl2.SDL_CONTROLLERBUTTONDOWN:
+                butt = e.cbutton.button
+                self.buttons[butt] = True
+                if butt in BUTTON_MAP:
+                    self.pressed = BUTTON_MAP[butt]
+                    self.last_press = self.buttons, butt, self.pressed
+                    self.held_for = -self.REPEAT_DELAY
+            elif e.type == sdl2.SDL_CONTROLLERBUTTONUP:
+                butt = e.cbutton.button
+                self.buttons[butt] = False
+
+            elif e.type == sdl2.SDL_CONTROLLERAXISMOTION:
+                a = e.caxis.axis
+                v = round(e.caxis.value / self.AXIS_MOD)
+                if (a,v) in AXIS_MAP:
+                    if v and self.axes.get(a) != v:
+                        self.pressed = AXIS_MAP[(a,v)]
+                        self.last_press = self.axes, a, self.pressed 
+                        self.held_for = -self.REPEAT_DELAY
+                self.axes[a] = v
+            
+        # HANDLE KEY REPEATS
+        if self.last_press:
+            pressed = None
+            m, k, b = self.last_press
+            
+            if b in self.CAN_REPEAT and m.get(k):
+                self.held_for += 1
+                if self.held_for > self.REPEAT_RATE:
+                    self.held_for = 0
+                    self.pressed = b
 
 
 
