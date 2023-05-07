@@ -1,0 +1,7 @@
+This repository offers a lightweight graphical user interface that might
+be used in PortMaster and/or other graphical programs running on AmberElec
+and similar retro handhelds. It's designed for low powered systems that
+lack x-windows and other window managers, using pySDL2 to access the SDL2
+functionality included with most systems. Written in pure python, it has
+no other dependencies. User input from game controllers and keyboards is
+provided, with touchscreen support coming in the future.
