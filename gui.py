@@ -217,7 +217,6 @@ class Region:
 
         text_area = area.inflated(-self.borderx*2, -self.bordery*2)
 
-        print(f'font: ({self.font,self.fontsize}')
         if self.font and self.fontsize:
             self.fonts.load(self.font, self.fontsize)
         else:
@@ -255,7 +254,6 @@ class Region:
             irect = text_area.copy()
             irect.height = itemsize
             for i, t in enumerate(self.list[start: start + self.page_size]):
-                print(self.selected, i, start, i+start)
                 if isinstance(t, (list, tuple)):
                     bar = self._verify_bar(None, t, irect)
                     self._draw_bar(irect, bar)

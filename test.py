@@ -62,6 +62,7 @@ def main():
         screen.present()
         window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
+        update = False
 
     screen.destroy()
     return 0
