@@ -216,24 +216,26 @@ class Region:
                 image.draw_in(dest.clip(area).tuple())
 
         text_area = area.inflated(-self.borderx*2, -self.bordery*2)
-        #draw_rect(text_area.sdl(), (0,0,0,255))
+
+        print(f'font: ({self.font,self.fontsize}')
+        if self.font and self.fontsize:
+            self.fonts.load(self.font, self.fontsize)
+        else:
+            return
 
         # RENDER BAR (toolbarish)
-        #bar = bar or self.bar
-        bar = self.bar
-        if self.font and bar:
-            self._draw_bar(text_area, bar)
+        if self.bar:
+            self._draw_bar(text_area, self.bar)
 
         # RENDER TEXT
-        elif self.font and text:
+        elif text:
             x, y = getattr(text_area, self.align, text_area.topleft)
             self.fonts.draw(text, x, y, self.fontcolor, 255,
                     self.align, text_area).height + self.linespace
 
-        elif self.font and self._text:
+        elif self._text:
             pos = self.selected % len(self._text)
 
-            self.fonts.load(self.font, self.fontsize)
             x, y = getattr(text_area, self.align, text_area.topleft)
             #y += self.linespace // 2
             for l in self._text[pos:]:
@@ -243,8 +245,8 @@ class Region:
                         self.align, text_area).height + self.linespace
 
         # RENDER LIST
-        elif self.font and self.list:
-            itemsize = self.itemsize or self.font.height + self.bordery
+        elif self.list:
+            itemsize = self.itemsize or self.fonts.height + self.bordery
             self.page_size = area.height // itemsize
             self.selected = self.selected % len(self.list)
 
@@ -253,7 +255,7 @@ class Region:
             irect = text_area.copy()
             irect.height = itemsize
             for i, t in enumerate(self.list[start: start + self.page_size]):
-
+                print(self.selected, i, start, i+start)
                 if isinstance(t, (list, tuple)):
                     bar = self._verify_bar(None, t, irect)
                     self._draw_bar(irect, bar)
@@ -261,13 +263,14 @@ class Region:
                     if isinstance(self.select, Region):
                         r = irect.inflated(self.borderx*2, self.bordery*2)
                         self.select.draw(irect, t)
+                        self.fonts.load(self.font, self.fontsize)
                     else:
                         self.fonts.draw(t, *irect.midleft, self.select, 255,
                                 'midleft', text_area)             
                 else:           
                     self.fonts.draw(t,  *irect.midleft, self.fontcolor, 255,
                             "midleft", text_area)
-                irect.y += self.itemsize
+                irect.y += itemsize
 
     def update(self):
         updated = False
@@ -342,9 +345,6 @@ class Region:
             x -= dest.width + space
 
         return left + right
-
-        
-
 
     def _draw_bar(self, area, bar):
         self.renderer.blendmode = sdl2.SDL_BLENDMODE_BLEND
@@ -430,7 +430,7 @@ class Region:
                 raise Exception(f'point {i}{p} is not a number')
             if type(p)==float and 0 < p <= 1:
                 val[i] = p * self.renderer.logical_size[i % 2]
-        val = Rect(*val)
+        val = Rect.from_corners(*val)
         print(f'{name}: {val}')
         return val
 

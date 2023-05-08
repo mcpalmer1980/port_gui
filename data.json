@@ -16,22 +16,45 @@
     },
     "background":
     {
-        "area": [0.0,0.9,1.0,1.0],
-        "fill": [100,100,100]
+        "area": [0.0,0.0,1.0,1.0],
+        "fill": [200,200,200]
     },
     "mainlist":
     {
-        "area": [0.1, 0.1, 0.4, 0.8],
-        "fill": [50,50,50],
+        "area": [0.05, 0.05, 0.48, 0.95],
+        "fill": [230,230,230],
+        "border": 8,
+        "font": "Roboto.ttf",
+        "fontsize": 30,
+        "fontcolor": [0,0,0],
+        "selected": [120,120,120],
+        "list": [
+            "Install Port",
+            "Remove Port",
+            "Update Port List",
+            "Exit"
+        ],
+        "info": [
+            "Install a new port onto your device.",
+            "Remove a port that has been installed onto your device",
+            "Update port data including the list of ports and screenshots.",
+            "Exit Portmaster and return to your game list."
+        ],
+
         "roundness": 20,
         "thickness": 6
     },
     "maininfo":
     {
-        "area": [0.6, 0.1, 0.4, 0.8],
-        "fill": [50,50,50],
+        "area": [0.52, 0.05, 0.95, 0.95],
+        "fill": [230,230,230],
         "roundness": 20,
-        "thickness": 6
+        "thickness": 6,
+        "border": 8,
+        "font": "Roboto.ttf",
+        "fontsize": 24,
+        "fontcolor": [0,0,0],
+        "wrap": true
     },
     "title":
     {
@@ -67,14 +90,13 @@
     "list":
     {
         "area": [0,0,1,1],
-        "color": [10,10,10],
-        "outline": [0,0,0],
+        "color": [50,50,50],
         "pattern": "",
         "repeat": 0,
         "align": "midleft",
         "roundness": 6,
-        "font": "font.ttf",
-        "fontsize": 18,
+        "font": "Roboto.ttf",
+        "fontsize": 30,
         "fontcolor": [255,255,255],
         "text": "",
         "list": null,
