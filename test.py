@@ -29,6 +29,8 @@ def main():
     maininfo = Region(screen, config['maininfo'], images, fonts)
     mainlist.select = Region(screen, config['list'], images, fonts)
 
+    buttons = images.load_atlas('buttons.png', config['buttons.png'])
+
     update = True
     running = 1
     while running:
@@ -47,9 +49,12 @@ def main():
                 update = True
                 mainlist.selected += 1
             elif inp.pressed in ('A', 'start'):
+                update = True
                 selected = mainlist.list[mainlist.selected]
                 if selected == 'Exit':
                     running = 0
+                if selected == 'Install Port':
+                    game_list()
 
         if update:
             mainlist.selected = mainlist.selected % len (mainlist.list)
@@ -60,7 +65,7 @@ def main():
 
 
         screen.present()
-        window.refresh()
+        #window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
         update = False
 
@@ -68,21 +73,80 @@ def main():
     return 0
 
 
+
+
 def game_list():
+    global config, screen, fonts, images, inp
     ipath = '/home/michael/Roms/genesis/media/images'
-    files = [os.path.join(ipath,f) for f in os.listdir(ipath)[:15] if f.endswith('.png')]
+    files = sorted([os.path.join(ipath,f) for f in os.listdir(ipath) if f.endswith('.png')])
+    names = [os.path.splitext(os.path.split(f)[-1])[0] for f in files]
+
+    '''
     for fn in files:
         images.load(fn)
     image = images.load(random.choice(images.cache))
 
     select = Region(screen, d['list'], images, fonts)
     title.select = select
+    '''
+    background = Region(screen, config['background'], images, fonts)
+    gamelist = Region(screen, config['gamelist'], images, fonts)
+    gametext = Region(screen, config['gametext'], images, fonts)
+    gameimage = Region(screen, config['gameimage'], images, fonts)
+    gamebar = Region(screen, config['gamebar'], images, fonts)
 
-    running = 1
+    background.text = names[0]
+    gamelist.list = names
+
+    running = update = 1
     while running:
-        if not running % 90:
+        running += 1
+        events = sdl2.ext.get_events()
+        inp.process(events)
+
+        if inp.quit:
+            running = 0
+        if inp.pressed:
+            if inp.pressed == 'up':
+                gamelist.selected -= 1
+                running = 1
+            elif inp.pressed == 'down':
+                gamelist.selected += 1
+                running = 1
+            elif inp.pressed == 'right':
+                gamelist.selected += gamelist.page_size
+                running = 1
+            elif inp.pressed == 'left':
+                gamelist.selected -= gamelist.page_size
+                running = 1
+            elif inp.pressed in ('start', 'select'):
+                running = 0
+
+        if running == 1:
+            background.text = names[gamelist.selected]
             update = True
-            image = images.load(random.choice(images.cache))
+            gametext.text = ''
+            gameimage.image = None
+        elif running == 20:
+            im = images.load(files[gamelist.selected])
+            gameimage.image = im
+            gametext.text = files[gamelist.selected].replace('/', ' ') * 5
+            update = True
+            print(files[gamelist.selected])
+        
+        if gametext.update():
+            update = True
+        
+        if update:
+            background.draw()
+            gamelist.draw()
+            gametext.draw()
+            gameimage.draw()
+            gamebar.draw()
+
+        screen.present()
+        sdl2.timer.SDL_Delay(1000//30)
+        update = False
 
 if __name__ == "__main__":
     main()

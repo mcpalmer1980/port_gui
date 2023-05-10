@@ -14,10 +14,25 @@
         "circle": [64,547,62,62],
         "bar": [373,225,222,18]
     },
+    "buttons.png":
+    {
+        "A": [0,0, 150,142],
+        "B": [150,0,150, 142],
+        "X": [300,0,150, 142],
+        "Y": [450,0,150, 142],
+        "start": [0,142,232,114],
+        "select": [0,256,232,114],
+        "L": [420,142,180,114],
+        "R": [420,256,180,114]
+    },
     "background":
     {
         "area": [0.0,0.0,1.0,1.0],
-        "fill": [200,200,200]
+        "fill": [200,200,200],
+        "borderx": 8,
+        "font": "Roboto.ttf",
+        "fontsize": 36,
+        "fontcolor": [0,0,0]
     },
     "mainlist":
     {
@@ -90,6 +105,7 @@
     "list":
     {
         "area": [0,0,1,1],
+        "fill": [0,0,0],
         "color": [50,50,50],
         "pattern": "",
         "repeat": 0,
@@ -102,5 +118,37 @@
         "list": null,
         "scrollable": 0,
         "autoscroll": 0
+    },
+    "gamelist":
+    {
+        "area": [-10, 0.1, 0.45,0.75],
+        "borderx": 14,
+        "fill": [230,230,230],
+        "roundness": 10,
+        "font": "Roboto.ttf",
+        "fontsize": 24,
+        "fontcolor": [0,0,0],
+        "selected": [100,100,100]
+    },
+    "gametext":
+    {
+        "area": [6, 0.75, 1.0, 1.0],
+        "font": "Roboto.ttf",
+        "fontsize": 24,
+        "fontcolor": [0,0,0],
+        "autoscroll": 40,
+        "wrap": true
+    },
+    "gameimage":
+    {
+        "area": [0.45, 0.1, 1.0,0.65]
+    },
+    "gamebar":
+    {
+        "area": [0.455, 0.66, 1.0, 0.74],
+        "font": "Roboto.ttf",
+        "fontsize": 16,
+        "fontcolor": [0,0,0],
+        "bar": ["A", "Install", "B", "Back", "X", "Filter"]
     }
 }

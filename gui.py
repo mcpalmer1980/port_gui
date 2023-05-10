@@ -95,12 +95,13 @@ class Region:
         self.fonts = fonts
 
         self.area = self._verify_rect('area')
-        self.fill = self._verify_color('fill', (0,0,0))
+        self.fill = self._verify_color('fill', optional=True)
         self.outline = self._verify_color('outline', optional=True)
         self.thickness = self._verify_int('thickness', 0)
         self.roundness = self._verify_int('roundness', 0)
         self.borderx = self._verify_int('border', 0)
         self.bordery = self._verify_int('bordery', self.borderx) or 0
+        self.borderx = self._verify_int('borderx', self.borderx)
 
         self.image = self.images.load(data.get('image'))      # TODO self._verify_file('image', optional=True)
         self.imagesize = self._verify_ints('imagesize', 2, None, optional=True)
@@ -130,11 +131,11 @@ class Region:
         self.itemsize = self._verify_int('itemsize', None, True)
         self.select = self._verify_color('selected', optional=True)
 
-
         self.scrollable = self._verify_bool('scrollable', False, True)
         self.autoscroll = self._verify_int('autoscroll', 0, True)
 
-        self.bar = self._verify_bar('bar', optional=True)
+        self.barspace = self._verify_int('barspace', 4)
+        self._bar = self._verify_bar('bar', optional=True)
 
         if self._text and self.list:
             raise Exception('Cannot define text and a list')
@@ -223,8 +224,8 @@ class Region:
             return
 
         # RENDER BAR (toolbarish)
-        if self.bar:
-            self._draw_bar(text_area, self.bar)
+        if self._bar:
+            self._draw_bar(text_area, self._bar)
 
         # RENDER TEXT
         elif text:
@@ -290,7 +291,14 @@ class Region:
             self._text = self.fonts._split_lines(val, text_area)
         else:
             self._text = val.split('\n')
-        print(f'text set to:\n{self._text}')
+        #print(f'text set to:\n{self._text}')
+    
+    @property
+    def bar(self):
+        return self._bar
+    @bar.setter
+    def bar(self, val):
+        self._bar = self._verify_bar(None, val)
 
     def _verify_bar(self, name, default=None, area=None, optional=True):
         vals = self._dict.get(name, default)
@@ -317,7 +325,6 @@ class Region:
         self.fonts.load(self.font, self.fontsize)
         x = area.x
         y = area.centery
-        space = getattr(self, 'barspace', 20)
 
         items = left = []; right = []
         for i, v in enumerate(vals):
@@ -325,13 +332,13 @@ class Region:
             if im:
                 dest = Rect.from_sdl(im.srcrect).fitted(area)
                 dest.x = x
-                x = dest.right + space
+                x = dest.right + self.barspace
                 items.append((dest, im))
             elif isinstance(v, str):
                 w = self.fonts.width(v)
                 dest = Rect(x, y, w, self.fonts.height)
                 dest.centery = area.centery
-                x = dest.right + space
+                x = dest.right + self.barspace
                 items.append((dest, v))
             elif v == None:
                 items = right
@@ -340,13 +347,13 @@ class Region:
         x = area.right
         for dest, item in right:
             dest.right = x
-            x -= dest.width + space
+            x -= dest.width + self.barspace
 
         return left + right
 
     def _draw_bar(self, area, bar):
-        self.renderer.blendmode = sdl2.SDL_BLENDMODE_BLEND
-        self.fonts.load(self.font, self.fontsize)
+        mode, self.renderer.blendmode = self.renderer.blendmode, sdl2.SDL_BLENDMODE_BLEND
+        #self.fonts.load(self.font, self.fontsize)
 
         for dest, item in bar:
             #self.renderer.draw_rect(dest.sdl(), (255,0,0,255))
@@ -356,6 +363,7 @@ class Region:
                 x, y = dest.midleft
                 self.fonts.draw(item, x, y,
                         self.fontcolor, 255, 'midleft', area)
+        self.renderer.blendmode = mode
 
 
     def _draw_patch(self, area, image):
@@ -429,7 +437,7 @@ class Region:
             if type(p)==float and 0 < p <= 1:
                 val[i] = p * self.renderer.logical_size[i % 2]
         val = Rect.from_corners(*val)
-        print(f'{name}: {val}')
+        #print(f'{name}: {val}')
         return val
 
     def _verify_color(self, name, default=None, optional=False):
@@ -447,7 +455,7 @@ class Region:
                 raise Exception(f'{i},{p} - invalid color type')
             if p<0 or p>255:
                 raise Exception(f'{i},{p} - invalid color value')
-        print(f'{name}: {val}')
+        #print(f'{name}: {val}')
         return val
 
     def _verify_int(self, name, default=0, optional=False):
@@ -456,7 +464,7 @@ class Region:
 
         if not isinstance(val, int):
             raise Exception(f'{name} is not an int')
-        print(f'{name}: {val}')
+        #print(f'{name}: {val}')
         return val
     
     def _verify_file(self, name, default=None, optional=False):
@@ -467,7 +475,7 @@ class Region:
             raise Exception(f'{name} is not a string')        
         if not os.path.exists(val):
             raise Exception(f'{name} is not a file')
-        print(f'{name}: {val}')
+        #print(f'{name}: {val}')
         return val
     
     def _verify_bool(self, name, default=None, optional=False):
@@ -476,7 +484,7 @@ class Region:
 
         if val in (True, False, 0, 1):
             val = True if val else False
-            print(f'{name}: {val}')
+            #print(f'{name}: {val}')
             return val
         else:
             raise Exception(f'{name} is not BOOL')
@@ -494,7 +502,7 @@ class Region:
         if val == None and optional: return None
 
         if isinstance(val, str):
-            print(f'{name}: {val}')
+            #print(f'{name}: {val}')
             return val
         else:
             raise(f'{name} is not text')

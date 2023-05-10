@@ -428,7 +428,6 @@ class ImageManager():
         self.cache = self.cache[:self.MAX_IMAGES]
 
 
-
 def get_text_size(font, text=''):
     f = font.get_ttf_font()
     text_w, text_h = c_int(0), c_int(0)
