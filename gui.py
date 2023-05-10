@@ -24,6 +24,9 @@ except:
 
 '''
 TODO
+    Text horiz scrolling
+    Bar selection/selectedx
+    On-screen Keyboard
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
     Deque the cache list
@@ -140,7 +143,8 @@ class Region:
         if self._text and self.list:
             raise Exception('Cannot define text and a list')
 
-        self.life = 0
+        self.scroll_pos = 0
+        self.scroll_delay = 0
         self.selected = 0
 
     def draw(self, area=None, text=None, image=None):
@@ -234,7 +238,7 @@ class Region:
                     self.align, text_area).height + self.linespace
 
         elif self._text:
-            pos = self.selected % len(self._text)
+            pos = self.scroll_pos % len(self._text)
 
             x, y = getattr(text_area, self.align, text_area.topleft)
             #y += self.linespace // 2
@@ -273,10 +277,10 @@ class Region:
 
     def update(self):
         updated = False
-        self.life += 1
+        self.scroll_delay += 1
         if self.autoscroll:
-            if not self.life % self.autoscroll:
-                self.selected += 1
+            if not self.scroll_delay % self.autoscroll:
+                self.scroll_pos += 1
                 updated = True
         return updated
         
@@ -289,6 +293,8 @@ class Region:
             self.fonts.load(self.font, self.fontsize)
             text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
             self._text = self.fonts._split_lines(val, text_area)
+            self.scroll_delay = 0
+            self.scroll_pos = 0
         else:
             self._text = val.split('\n')
         #print(f'text set to:\n{self._text}')

@@ -3,7 +3,9 @@ import sdl2, sdl2.ext
 from utility import Rect, Image, ImageManager, FontManager
 from gui import Region, InputHandler
 
-DEFAULT_SIZE= 480, 320
+DEFAULT_SIZE = 480, 320
+PHYSICAL_RESOLUTION = 480, 320
+
 image_path = '/home/michael/Roms/genesis/media/images'
 
 def main():
@@ -14,10 +16,13 @@ def main():
     display_size = config.get('options', {}).get('display_size', DEFAULT_SIZE)
 
     sdl2.ext.init()
-    window = sdl2.ext.Window("Harbour Master", size=display_size)
+    window = sdl2.ext.Window("Harbour Master",
+            size=PHYSICAL_RESOLUTION,
+            flags=sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
     screen = sdl2.ext.renderer.Renderer(window,
-            flags=sdl2.SDL_RENDERER_ACCELERATED)
+            flags=sdl2.SDL_RENDERER_ACCELERATED, logical_size=display_size)
     screen.clear((0,0,0))
+    sdl2.ext.renderer.set_texture_scale_quality('best')
 
     Image.renderer = screen
     images = ImageManager(screen)
@@ -29,7 +34,6 @@ def main():
     mainlist = Region(screen, config['mainlist'], images, fonts)
     maininfo = Region(screen, config['maininfo'], images, fonts)
     mainlist.select = Region(screen, config['list'], images, fonts)
-
     buttons = images.load_atlas('buttons.png', config['buttons.png'])
 
     update = True
@@ -63,10 +67,8 @@ def main():
             background.draw()
             mainlist.draw()
             maininfo.draw()
+            screen.present()
 
-
-        screen.present()
-        #window.refresh()
         sdl2.timer.SDL_Delay(1000//30)
         update = False
 
@@ -93,7 +95,8 @@ def game_list():
     gamelist = Region(screen, config['gamelist'], images, fonts)
     gametext = Region(screen, config['gametext'], images, fonts)
     gameimage = Region(screen, config['gameimage'], images, fonts)
-    gamebar = Region(screen, config['gamebar'], images, fonts)
+    if 'gamebar' in config:
+        gamebar = Region(screen, config['gamebar'], images, fonts)
 
     background.text = names[0]
     gamelist.list = names
@@ -142,9 +145,10 @@ def game_list():
             gamelist.draw()
             gametext.draw()
             gameimage.draw()
-            gamebar.draw()
+            if 'gamebar' in config:
+                gamebar.draw()
 
-        screen.present()
+            screen.present()
         sdl2.timer.SDL_Delay(1000//30)
         update = False
 
