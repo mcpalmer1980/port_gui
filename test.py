@@ -4,6 +4,7 @@ from utility import Rect, Image, ImageManager, FontManager
 from gui import Region, InputHandler
 
 DEFAULT_SIZE= 480, 320
+image_path = '/home/michael/Roms/genesis/media/images'
 
 def main():
     global config, screen, fonts, images, inp
@@ -77,8 +78,7 @@ def main():
 
 def game_list():
     global config, screen, fonts, images, inp
-    ipath = '/home/michael/Roms/genesis/media/images'
-    files = sorted([os.path.join(ipath,f) for f in os.listdir(ipath) if f.endswith('.png')])
+    files = sorted([os.path.join(image_path,f) for f in os.listdir(image_path) if f.endswith('.png')])
     names = [os.path.splitext(os.path.split(f)[-1])[0] for f in files]
 
     '''
