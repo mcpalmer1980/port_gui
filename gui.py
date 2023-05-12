@@ -14,7 +14,7 @@ CLASSES:
         string events such as 'up', 'left', 'A', and 'start'
 '''
 import os, sys
-import sdl2, sdl2.ext
+import sdl2, sdl2.ext, sdl2.sdlmixer
 from utility import Rect, Image, ImageManager, FontManager
 
 try:
@@ -146,6 +146,7 @@ class Region:
         self.scroll_pos = 0
         self.scroll_delay = 0
         self.selected = 0
+        self.selectedx = -1
 
     def draw(self, area=None, text=None, image=None):
         '''
@@ -255,13 +256,20 @@ class Region:
             self.selected = self.selected % len(self.list)
 
             self.fonts.load(self.font, self.fontsize)
-            start = max(0, self.selected - self.page_size//3)
+            if len(self.list) > self.page_size:
+                start = max(0, self.selected - self.page_size//3)
+            else:
+                start = 0
+
             irect = text_area.copy()
             irect.height = itemsize
             for i, t in enumerate(self.list[start: start + self.page_size]):
                 if isinstance(t, (list, tuple)):
                     bar = self._verify_bar(None, t, irect)
-                    self._draw_bar(irect, bar)
+                    if i == self.selected and self.selectedx >= 0:
+                        x = self.selectedx
+                    else: x = None
+                    self._draw_bar(irect, bar, x)
                 elif self.selected == i + start:
                     if isinstance(self.select, Region):
                         r = irect.inflated(self.borderx*2, self.bordery*2)
@@ -357,11 +365,11 @@ class Region:
 
         return left + right
 
-    def _draw_bar(self, area, bar):
+    def _draw_bar(self, area, bar, selected=None):
         mode, self.renderer.blendmode = self.renderer.blendmode, sdl2.SDL_BLENDMODE_BLEND
         #self.fonts.load(self.font, self.fontsize)
 
-        for dest, item in bar:
+        for i, (dest, item) in enumerate(bar):
             #self.renderer.draw_rect(dest.sdl(), (255,0,0,255))
             if isinstance(item, Image):
                 item.draw_in(dest.sdl())
@@ -369,6 +377,9 @@ class Region:
                 x, y = dest.midleft
                 self.fonts.draw(item, x, y,
                         self.fontcolor, 255, 'midleft', area)
+            if i == selected:
+                self.renderer.fill(dest.tuple(), [0,0,255,100])
+
         self.renderer.blendmode = mode
 
 
@@ -568,7 +579,7 @@ AXIS_MAP = {
 class InputHandler():
     REPEAT_RATE = 5
     REPEAT_DELAY = 10
-    CAN_REPEAT = ('up', 'down', 'right', 'left')
+    CAN_REPEAT =  ('up', 'down', 'right', 'left')
     AXIS_MOD = 2 ** 15 * 1.2
     def __init__(self):
         sdl2.ext.common.init(controller=True)
