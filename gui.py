@@ -24,12 +24,7 @@ except:
 
 '''
 TODO
-    Bar - min_item_width
-    osk
-    Sound volume, playvolume, music player
     Text horiz scrolling
-    Bar selection/selectedx
-    On-screen Keyboard
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
     Deque the cache list
@@ -368,21 +363,38 @@ class Region:
         return left + right
 
     def _draw_bar(self, area, bar, selected=None):
-        mode, self.renderer.blendmode = self.renderer.blendmode, sdl2.SDL_BLENDMODE_BLEND
+        #mode, self.renderer.blendmode = self.renderer.blendmode, sdl2.SDL_BLENDMODE_BLEND
         #self.fonts.load(self.font, self.fontsize)
 
         for i, (dest, item) in enumerate(bar):
-            #self.renderer.draw_rect(dest.sdl(), (255,0,0,255))
-            if isinstance(item, Image):
+            if i == selected:
+                if isinstance(self.select, Region):
+
+                    if isinstance(item, Image):
+                        image = item; text = None
+                    else:
+                        text = item; image = None
+                    r = dest.inflated(self.borderx*2, self.bordery*2)
+                    self.select.draw(dest, text, image)
+                    self.fonts.load(self.font, self.fontsize)
+                
+                else:
+                    self.renderer.fill(dest.tuple(), [0,0,255,100])
+
+                    if isinstance(item, Image):
+                        item.draw_in(Rect.from_sdl(item.srcrect).fitted(dest).tuple())
+                    else:
+                        x, y = dest.center
+                        self.fonts.draw(item, x, y,
+                                self.fontcolor, 255, 'center', area)
+
+            elif isinstance(item, Image):
                 item.draw_in(Rect.from_sdl(item.srcrect).fitted(dest).tuple())
             else:
                 x, y = dest.center
                 self.fonts.draw(item, x, y,
                         self.fontcolor, 255, 'center', area)
-            if i == selected:
-                self.renderer.fill(dest.tuple(), [0,0,255,100])
-
-        self.renderer.blendmode = mode
+        #self.renderer.blendmode = mode
 
 
     def _draw_patch(self, area, image):

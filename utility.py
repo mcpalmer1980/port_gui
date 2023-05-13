@@ -632,6 +632,7 @@ class SoundManager():
     def __init__(self, folder):
         self.RESOURCES = sdl2.ext.Resources(__file__, 'assets')
         self.sounds = {}
+        self.song = None
     def init(self):
         if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) != 0:
             raise RuntimeError("Cannot initialize audio system: {}".format(SDL_GetError()))
@@ -639,26 +640,51 @@ class SoundManager():
         if sdl2.sdlmixer.Mix_OpenAudio(44100, sdl2.sdlmixer.MIX_DEFAULT_FORMAT, 2, 1024):
             raise RuntimeError(f'Cannot open mixed audio: {sdlmixer.Mix_GetError()}')
     
-    def load(self, name):
+    def load(self, name, volume=1):
         file = self.RESOURCES.get_path(name)
         sample = sdl2.sdlmixer.Mix_LoadWAV(
                 sdl2.ext.compat.byteify(file, 'utf-8'))
 
         if sample is None:
             raise RuntimeError(f'Cannot open audio file: {sdl2.Mix_GetError()}')
+        sdl2.sdlmixer.Mix_VolumeChunk(sample, int(128*volume))
         self.sounds[os.path.splitext(name)[0]] = sample
     
-    def __call__(self, name):
+    def music(self, name, loops=-1, volume=1):
+        file = self.RESOURCES.get_path(name)
+        sdl2.sdlmixer.Mix_VolumeMusic(int(volume*128))
+        music = sdl2.sdlmixer.Mix_LoadMUS(
+                    sdl2.ext.compat.byteify(file, 'utf-8'))
+        if music is None:
+            raise RuntimeError(f'Cannot open audio file: {sdl2.Mix_GetError()}')
+
+        sdl2.sdlmixer.Mix_PlayMusic(music, loops)
+        if self.song:
+            sdl2.sdlmixer.Mix_FreeMusic(self.song)
+        self.song = music      
+    
+    @property
+    def volume(self):
+        return sdl2.sdlmixer.Mix_MasterVolume(-1) / 128
+    @volume.setter
+    def volume(self, v):
+        sdl2.sdlmixer.Mix_MasterVolume(int(v*128))
+
+    def __call__(self, name, volume=1):
         sample = self.sounds.get(name)
         if sample:
             channel = sdl2.sdlmixer.Mix_PlayChannel(-1, sample, 0)
             if channel == -1:
                 raise RuntimeError(
                     f'Cannot play sample {name}: {sdl2.sdlmixer.Mix_GetError()}')
+            sdl2.sdlmixer.Mix_Volume(channel, int(volume*128))
 
     def __del__(self):
         for s in self.sounds.values():
             sdl2.sdlmixer.Mix_FreeChunk(s)
+        if self.song:
+            sdl2.sdlmixer.Mix_FreeMusic(self.song)
+
         sdl2.sdlmixer.Mix_CloseAudio()
         sdl2.SDL_Quit(sdl2.SDL_INIT_AUDIO)
         print('SoundManager closed')
