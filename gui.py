@@ -24,6 +24,9 @@ except:
 
 '''
 TODO
+    Bar - min_item_width
+    osk
+    Sound volume, playvolume, music player
     Text horiz scrolling
     Bar selection/selectedx
     On-screen Keyboard
@@ -138,6 +141,7 @@ class Region:
         self.autoscroll = self._verify_int('autoscroll', 0, True)
 
         self.barspace = self._verify_int('barspace', 4)
+        self.barwidth = self._verify_int('barwidth', 0, optional=True)
         self._bar = self._verify_bar('bar', optional=True)
 
         if self._text and self.list:
@@ -324,9 +328,6 @@ class Region:
         if vals.count('None') > 1:
             raise Exception('bar has more than one null value separator')
 
-        #self._text = None; self.list = None
-        #   area = area or self.area
-
         if not area:
             area = self.area
             if self.patch:
@@ -346,11 +347,12 @@ class Region:
             if im:
                 dest = Rect.from_sdl(im.srcrect).fitted(area)
                 dest.x = x
+                dest.width = max(dest.w, self.barwidth)
                 x = dest.right + self.barspace
                 items.append((dest, im))
             elif isinstance(v, str):
                 w = self.fonts.width(v)
-                dest = Rect(x, y, w, self.fonts.height)
+                dest = Rect(x, y, max(w, self.barwidth), self.fonts.height)
                 dest.centery = area.centery
                 x = dest.right + self.barspace
                 items.append((dest, v))
@@ -372,11 +374,11 @@ class Region:
         for i, (dest, item) in enumerate(bar):
             #self.renderer.draw_rect(dest.sdl(), (255,0,0,255))
             if isinstance(item, Image):
-                item.draw_in(dest.sdl())
+                item.draw_in(Rect.from_sdl(item.srcrect).fitted(dest).tuple())
             else:
-                x, y = dest.midleft
+                x, y = dest.center
                 self.fonts.draw(item, x, y,
-                        self.fontcolor, 255, 'midleft', area)
+                        self.fontcolor, 255, 'center', area)
             if i == selected:
                 self.renderer.fill(dest.tuple(), [0,0,255,100])
 

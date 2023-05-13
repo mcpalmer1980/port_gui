@@ -436,7 +436,7 @@ def get_text_size(font, text=''):
         return text_h.value
     return  text_w.value, text_h.value
 
-char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+&<>~@/\\|(%)'''
+char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+&<^>~@/\\|(%)'''
 class FontManager():
     '''
     Font renderer for use with pygame._sdl2

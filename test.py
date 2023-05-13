@@ -90,11 +90,18 @@ def main():
 
 
 def keyboard():
-    kb = [list('1234567890'),
+    kbl = [ [' '],
+        list('1234567890'),
         list('qwertyuiop'),
         list('asdfghjkl'),
-        list('zxcvbnm.,')]
-    print(kb)
+        list('zxcvbnm.,'),
+        (' ^ ', ' __ ', ' << ', 'DONE')]
+    kbu = [ [' '],
+        list('1234567890'),
+        list('QWERTYUIOP'),
+        list('ASDFGHJKL'),
+        list('ZXCVBNM.,'),
+        (' ^ ', ' __ ', ' << ', 'DONE')]
 
     d = {
         "area": [0,0,1.0,1.0],
@@ -102,9 +109,16 @@ def keyboard():
         "font": "Roboto.ttf",
         "fontsize": 60,
         "fontcolor": [0,0,0],
-        "barspace": 8}
-    keyboard = Region(screen, d, images, fonts)
+        "barspace": 8,
+        "barwidth": 50}
+
+    upper = False
+    fakeimages = ImageManager(screen)
+    keyboard = Region(screen, d, fakeimages, fonts)
+    kb = kbl
     keyboard.list = kb
+    keyboard.selected = keyboard.selectedx = 1
+    text = ''
     
     running = update = 1
     while running:
@@ -121,14 +135,32 @@ def keyboard():
             if inp.pressed == 'up':
                 keyboard.selected -= 1
                 update = True
+                keyboard.selected = keyboard.selected if keyboard.selected > 0 else 5
+                keyboard.selectedx = min(max(keyboard.selectedx, 0), len(kb[keyboard.selected])-1)
             if inp.pressed == 'down':
                 keyboard.selected += 1
                 update = True
+                keyboard.selected = keyboard.selected if keyboard.selected <= 5 else 1
+                keyboard.selectedx = min(len(kb[keyboard.selected])-1, max(keyboard.selectedx, 0))
             if inp.pressed == 'right':
-                keyboard.selectedx += 1
+                keyboard.selectedx = (keyboard.selectedx+1) % len(kb[keyboard.selected])
                 update = True
             if inp.pressed == 'left':
-                keyboard.selectedx -= 1
+                keyboard.selectedx = (keyboard.selectedx-1) % len(kb[keyboard.selected])
+                update = True
+            if inp.pressed == 'A':
+                key = kb[keyboard.selected][keyboard.selectedx]
+                if len(key) == 1:
+                    text += key
+                elif key == ' __ ':
+                    text += ' '
+                elif key == ' << ':
+                    text = text[:-1]
+                elif key == ' ^ ':
+                    kb = kbl if upper else kbu
+                    upper = not upper
+                    keyboard.list = kb
+                keyboard.list[0][0] = text
                 update = True
 
         if update:
