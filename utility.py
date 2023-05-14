@@ -633,12 +633,16 @@ class SoundManager():
         self.RESOURCES = sdl2.ext.Resources(__file__, 'assets')
         self.sounds = {}
         self.song = None
-    def init(self):
-        if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) != 0:
-            raise RuntimeError("Cannot initialize audio system: {}".format(SDL_GetError()))
+        self.is_init = False
 
-        if sdl2.sdlmixer.Mix_OpenAudio(44100, sdl2.sdlmixer.MIX_DEFAULT_FORMAT, 2, 1024):
-            raise RuntimeError(f'Cannot open mixed audio: {sdlmixer.Mix_GetError()}')
+    def init(self):
+        if not self.is_init:
+            if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) != 0:
+                raise RuntimeError("Cannot initialize audio system: {}".format(SDL_GetError()))
+
+            if sdl2.sdlmixer.Mix_OpenAudio(44100, sdl2.sdlmixer.MIX_DEFAULT_FORMAT, 2, 1024):
+                raise RuntimeError(f'Cannot open mixed audio: {sdlmixer.Mix_GetError()}')
+            self.is_init = True
     
     def load(self, name, volume=1):
         file = self.RESOURCES.get_path(name)

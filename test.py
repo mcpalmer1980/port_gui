@@ -10,23 +10,32 @@ PlaySound = SoundManager('assets')
 def main():
     global config, screen, fonts, images, inp
 
-    with open('data.json') as inp:
+    with open('theme.json') as inp:
         config = json.load(inp)
-    display_size = config.get('options', {}).get('display_size', DEFAULT_SIZE)
+    if os.path.isfile('defaults.json'):
+        with open('defaults.json') as inp:
+            defaults = json.load(inp)
+        defaults.update(config) # TODO DEEP UPDATE
+        config = defaults
+    logical_size = config.get('options', {}).get('logical_size', DEFAULT_SIZE)
 
     sdl2.ext.init()
     mode = sdl2.ext.displays.DisplayInfo(0).current_mode
+    if 'window' in sys.argv:
+        screen_size = config['options'].get('screen_size') or logical_size
+        flags = None
+    else:
+        screen_size = config['options'].get('screen_size') or mode.w, mode.h
+        flags = sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP # TODO should not use fullscreen_desktop on actual device
     print(f'Current display mode: {mode.w}x{mode.h}@{mode.refresh_rate}Hz')
-    size = mode.w, mode.h
-    size = display_size
+    print(f'Logical Size: {logical_size}, Screen Size: {screen_size}')
 
     window = sdl2.ext.Window("Harbour Master",
-            size=size, )
-            #flags=sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
+            size=screen_size, flags=flags)
     screen = sdl2.ext.renderer.Renderer(window,
-            flags=sdl2.SDL_RENDERER_ACCELERATED, logical_size=display_size)
+            flags=sdl2.SDL_RENDERER_ACCELERATED, logical_size=logical_size)
     screen.clear((0,0,0))
-    sdl2.ext.renderer.set_texture_scale_quality('best')
+    sdl2.ext.renderer.set_texture_scale_quality('linear') #nearest, linear, best
 
     Image.renderer = screen
     images = ImageManager(screen)
@@ -37,7 +46,9 @@ def main():
     if 'click' in config['options']:
         PlaySound.init()
         PlaySound.load(config['options']['click'])
-        #PlaySound.music('on_dole.mod')
+    if 'music' in config['options']:
+        PlaySound.init()
+        PlaySound.music(config['options']['music'])
 
     background = Region(screen, config['background'], images, fonts)
     mainlist = Region(screen, config['mainlist'], images, fonts)
@@ -73,7 +84,7 @@ def main():
                     PlaySound('click')
                     game_list()
                 elif selected == "Remove Port":
-                    print(keyboard('Fuckerguy'))
+                    print(keyboard('default'))
 
         if update:
             mainlist.selected = mainlist.selected % len (mainlist.list)

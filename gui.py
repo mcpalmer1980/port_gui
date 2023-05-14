@@ -24,6 +24,7 @@ except:
 
 '''
 TODO
+    Deep update config into defaults
     Text horiz scrolling
     Text animation (rotation, scaling, color changing)
     Tiled image rendering

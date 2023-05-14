@@ -1,8 +1,9 @@
 {
     "options":
     {
-        "display_size": [640, 480],
-        "click": "click.ogg"
+        "logical_size": [640, 480],
+        "click": "click.ogg",
+        "music": "music.ogg"
     },
     "nine.png":
     {
