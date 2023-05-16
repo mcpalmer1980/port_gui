@@ -33,8 +33,8 @@ class Rect:
         'Scale by v keeping center in position'
         cx, cy = self.center
         r = Rect(self.x, self.y, self.width, self.height)
-        r.width *= v
-        r.height *= v
+        r.width = int(r.width*v)
+        r.height = int(r.height*v)
         r.center = cx, cy
         return r
 
@@ -510,7 +510,7 @@ class FontManager():
 
 
     def draw(self, text, x, y, color=None, alpha=None,
-            align=False, clip=None, wrap=None, linespace=0, font=None):
+            align='topleft', clip=None, wrap=None, linespace=0, font=None):
         '''
         Draw text string onto pySDL2.ext.Renderer context
 

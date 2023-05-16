@@ -56,6 +56,8 @@ def main():
     mainlist.select = Region(screen, config['list'], images, fonts)
     buttons = images.load_atlas('buttons.png', config['buttons.png'])
 
+    blist = list(buttons.keys()) ; picked = 0 ; where = Rect(340,240, 90,90)
+
     update = True
     running = 1
     while running:
@@ -85,6 +87,13 @@ def main():
                     game_list()
                 elif selected == "Remove Port":
                     print(keyboard('default'))
+            elif inp.pressed == 'right':
+                picked += 1
+                update = True
+            elif inp.pressed == 'left':
+                picked -= 1
+                update = True
+            picked = picked % len(blist)
 
         if update:
             mainlist.selected = mainlist.selected % len (mainlist.list)
@@ -92,6 +101,12 @@ def main():
             background.draw()
             mainlist.draw()
             maininfo.draw()
+
+            r = Rect.from_sdl(buttons[blist[picked]].srcrect) * 0.5
+            r.topleft = (340,240)
+            buttons[blist[picked]].draw_in(r.sdl())
+            fonts.draw(blist[picked], 340, 400, color=(0,0,0))
+
             screen.present()
 
         sdl2.timer.SDL_Delay(1000//30)

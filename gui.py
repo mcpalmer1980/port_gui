@@ -26,6 +26,7 @@ except:
 TODO
     Deep update config into defaults
     Move all assets into asset folder, and possibly use sdl2.RESOURCE module
+    Checkbox, Option, Slider, Selector(trigger), 
     Text horiz scrolling
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
