@@ -54,8 +54,8 @@
         "selected": [120,120,120],
         "list": [
             "Install Port",
-            "Remove Port",
-            "Update Port List",
+            "Onscreen Keyboard",
+            "Option Menu",
             "Exit"
         ],
         "info": [

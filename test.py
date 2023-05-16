@@ -48,7 +48,7 @@ def main():
         PlaySound.load(config['options']['click'])
     if 'music' in config['options']:
         PlaySound.init()
-        PlaySound.music(config['options']['music'])
+        PlaySound.music(config['options']['music'], volume=.3)
 
     background = Region(screen, config['background'], images, fonts)
     mainlist = Region(screen, config['mainlist'], images, fonts)
@@ -85,8 +85,10 @@ def main():
                 elif selected == 'Install Port':
                     PlaySound('click')
                     game_list()
-                elif selected == "Remove Port":
+                elif selected == "Onscreen Keyboard":
                     print(keyboard('default'))
+                elif selected == "Option Menu":
+                    option_test()
             elif inp.pressed == 'right':
                 picked += 1
                 update = True
@@ -214,6 +216,115 @@ def keyboard(text=''):
         update = False
         sdl2.timer.SDL_Delay(1000//30)
     
+options = {
+    "Enabled Option": "checked",
+    "Disabled Thing": "unchecked",
+    "Three Options": ["One", "Two", "Three"],
+    "A Label": None,
+    "Selectable": "Message",
+    "Four Options": ["One", "Two", "Three", "Extra"],
+    "Another": "Message",
+    "Five Options": ["One", "Two", "Three", "Extra", "V"],
+    #"Clicked": "checked",
+    #"Click Me Please": "unchecked",
+}
+    
+def make_bar(d):
+    checked = images.load('checked')
+    unchecked = images.load('unchecked')
+    more = images.load('more')
+    left = images.load('left')
+    right = images.load('right')
+
+    bars = []
+    selectable = []
+    for i, (k, v) in enumerate(d.items()):
+        if v == 'checked':
+            bars.append((k, None, 'checked'))
+            selectable.append(i)
+        elif v == 'unchecked':
+            bars.append((k, None, 'unchecked'))
+            selectable.append(i)
+        elif isinstance(v, (list, tuple)):
+            bars.append((k, None, right, v[0], left))
+            selectable.append(i)
+        elif v:
+            bars.append((k, None, more))
+            selectable.append(i)
+        else:
+            bars.append(k)
+    return bars, selectable
+
+def option_test():
+    bars, selectable = make_bar(options)
+    print('bars:\n',bars, '\n', selectable)
+
+    d = {
+        "area": [.05,0.2,0.95,0.95],
+        "fill": [230,230,230],
+        "font": "Roboto.ttf",
+        'align': 'center',
+        "fontsize": 32, 
+        "fontcolor": [0,0,0],
+        "barspace": 8,
+        #"barwidth": None,
+        "roundness": 12}
+
+    region = Region(screen, d, images, fonts)
+    region.list = bars
+    region.selected = 1; region.selectedx = 0
+    region.select = Region(screen, config['list'], images, fonts)
+    background = Region(screen, config['background'], images, fonts)
+
+    selected = 0
+    running = update = 1
+    while running:
+        running += 1
+        events = sdl2.ext.get_events()
+        inp.process(events)
+
+        if inp.pressed:
+            update = True
+            if inp.quit or inp.pressed in ('select', 'B'):
+                return ''
+            elif inp.pressed == 'up':
+                selected = (selected-1) % len(selectable)
+            elif inp.pressed == 'down':
+                selected = (selected+1) % len(selectable)
+            elif inp.pressed in ('right', 'A'):
+                k = bars[selectable[selected]][0]
+                v = options[k]
+                if isinstance(v, (list, tuple)):
+                    v.append(v.pop(0))
+                elif v == 'checked':
+                    options[k] = 'unchecked'
+                elif v == 'unchecked':
+                    options[k] = 'checked'
+                else:
+                    return v
+                bars, selectable = make_bar(options)
+                region.list = bars
+            elif inp.pressed in ('left'):
+                k = bars[selectable[selected]][0]
+                v = options[k]
+                if isinstance(v, (list, tuple)):
+                    i = v.pop(-1)
+                    v.insert(0, i)
+                    bars, selectable = make_bar(options)
+                    region.list = bars        
+            print(f'Selected: {selected}, {selectable[selected]}')        
+
+            region.selected = selectable[selected]
+
+
+        if update:
+            background.draw()
+            region.draw()
+            screen.present()
+        update = False
+        sdl2.timer.SDL_Delay(1000//30)
+
+
 
 
 

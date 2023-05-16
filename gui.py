@@ -27,6 +27,12 @@ TODO
     Deep update config into defaults
     Move all assets into asset folder, and possibly use sdl2.RESOURCE module
     Checkbox, Option, Slider, Selector(trigger), 
+        label = string
+        checkbox = string, checked/unchecked
+        option = selected, remaining, options, not, selected, now
+        slider = int 0-100
+        slider = ints current, min, step, max
+
     Text horiz scrolling
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
