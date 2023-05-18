@@ -1,6 +1,6 @@
 import sys, os, random, json
 import sdl2, sdl2.ext
-from utility import Rect, Image, ImageManager, FontManager, SoundManager
+from utility import *
 from gui import Region, InputHandler
 
 DEFAULT_SIZE = 480, 320
@@ -15,7 +15,8 @@ def main():
     if os.path.isfile('defaults.json'):
         with open('defaults.json') as inp:
             defaults = json.load(inp)
-        defaults.update(config) # TODO DEEP UPDATE
+        deep_update(defaults, config)
+        #defaults.update(config) # TODO DEEP UPDATE
         config = defaults
     logical_size = config.get('options', {}).get('logical_size', DEFAULT_SIZE)
 
@@ -48,6 +49,7 @@ def main():
         PlaySound.load(config['options']['click'])
     if 'music' in config['options']:
         PlaySound.init()
+        print(config['options']['music'])
         PlaySound.music(config['options']['music'], volume=.3)
 
     background = Region(screen, config['background'], images, fonts)
@@ -223,10 +225,12 @@ options = {
     "A Label": None,
     "Selectable": "Message",
     "Four Options": ["One", "Two", "Three", "Extra"],
+    "Nothing": None,
     "Another": "Message",
     "Five Options": ["One", "Two", "Three", "Extra", "V"],
-    #"Clicked": "checked",
-    #"Click Me Please": "unchecked",
+    "Volume": range_list(60, 0, 100, 5),
+    "Clicked": "checked",
+    "Click Me Please": "unchecked",
 }
     
 def make_bar(d):
@@ -257,7 +261,6 @@ def make_bar(d):
 
 def option_test():
     bars, selectable = make_bar(options)
-    print('bars:\n',bars, '\n', selectable)
 
     d = {
         "area": [.05,0.2,0.95,0.95],
@@ -276,7 +279,7 @@ def option_test():
     region.select = Region(screen, config['list'], images, fonts)
     background = Region(screen, config['background'], images, fonts)
 
-    selected = 0
+    region.selected = selected = 0
     running = update = 1
     while running:
         running += 1
@@ -311,8 +314,7 @@ def option_test():
                     i = v.pop(-1)
                     v.insert(0, i)
                     bars, selectable = make_bar(options)
-                    region.list = bars        
-            print(f'Selected: {selected}, {selectable[selected]}')        
+                    region.list = bars   
 
             region.selected = selectable[selected]
 

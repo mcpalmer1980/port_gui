@@ -2,8 +2,7 @@
     "options":
     {
         "logical_size": [640, 480],
-        "click": "click.ogg",
-        "music": "music.ogg"
+        "music": "music.mod"
     },
     "nine.png":
     {

@@ -15,7 +15,7 @@ CLASSES:
 '''
 import os, sys
 import sdl2, sdl2.ext, sdl2.sdlmixer
-from utility import Rect, Image, ImageManager, FontManager
+from utility import Rect, Image, ImageManager, FontManager, RESOURCES
 
 try:
     import sdl2.sdlgfx as sdlgfx
@@ -24,8 +24,6 @@ except:
 
 '''
 TODO
-    Deep update config into defaults
-    Move all assets into asset folder, and possibly use sdl2.RESOURCE module
     Checkbox, Option, Slider, Selector(trigger), 
         label = string
         checkbox = string, checked/unchecked
@@ -39,10 +37,6 @@ TODO
     Deque the cache list
     Alpha colors for fill and outline
     Alpha for images
-
-    ??Imagelist (separate image for each list item, with alignment)
-        ^^ Bar list enough??
-
 '''
 
 '''
@@ -265,20 +259,22 @@ class Region:
 
             self.fonts.load(self.font, self.fontsize)
             if len(self.list) > self.page_size:
-                start = max(0, self.selected - self.page_size//3)
+                start = max(0, min(self.selected - self.page_size//3,
+                        len(self.list)-self.page_size))
             else:
                 start = 0
 
             irect = text_area.copy()
             irect.height = itemsize
-            for i, t in enumerate(self.list[start: start + self.page_size]):
+            i = start
+            for t in self.list[start: start + self.page_size]:
                 if isinstance(t, (list, tuple)):
                     bar = self._verify_bar(None, t, irect)
                     if i == self.selected and self.selectedx >= 0:
                         x = self.selectedx
                     else: x = None
                     self._draw_bar(irect, bar, x)
-                elif self.selected == i + start:
+                elif self.selected == i:
                     if isinstance(self.select, Region):
                         r = irect.inflated(self.borderx*2, self.bordery*2)
                         self.select.draw(irect, t)
@@ -290,6 +286,7 @@ class Region:
                     self.fonts.draw(t,  *irect.midleft, self.fontcolor, 255,
                             "midleft", text_area)
                 irect.y += itemsize
+                i += 1
 
     def update(self):
         updated = False
@@ -513,7 +510,7 @@ class Region:
 
         if not isinstance(val, str):
             raise Exception(f'{name} is not a string')        
-        if not os.path.exists(val):
+        if not RESOURCES.get_path(val):
             raise Exception(f'{name} is not a file')
         #print(f'{name}: {val}')
         return val

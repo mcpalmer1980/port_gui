@@ -12,6 +12,8 @@ FontManager: class used to load and render fonts onto a pySDL
 from ctypes import c_int, byref
 import sdl2, sdl2.ext
 import os
+global RESOURCES
+RESOURCES = sdl2.ext.Resources(__file__, 'assets')
 
 class Point:
     def __init__(self, x, y):
@@ -389,7 +391,10 @@ class ImageManager():
 
         elif isinstance(fn, str) and os.path.isfile(fn):
             try:
-                surf = sdl2.ext.image.load_img(fn)
+                if os.path.exists(fn):
+                    surf = sdl2.ext.image.load_img(fn)
+                else:
+                    surf = sdl2.ext.image.load_img(RESOURCES.get_path(fn))
             except:
                 return
             texture = sdl2.ext.renderer.Texture(self.screen, surf)
@@ -406,8 +411,12 @@ class ImageManager():
         {'string_name': x, y, w, h} '''
 
         images = {}
-        surf = sdl2.ext.image.load_img(fn)
+        if os.path.exists(fn):
+            surf = sdl2.ext.image.load_img(fn)
+        else:
+            surf = sdl2.ext.image.load_img(RESOURCES.get_path(fn))
         texture = sdl2.ext.renderer.Texture(self.screen, surf)
+
         for name, item in atlas.items():
             r = item[:4] 
             flip_x, flip_y, angle, *_ = list(item[4:] + [0,0,0])
@@ -470,7 +479,11 @@ class FontManager():
             self.blank = self.cmap[' ']
             return filename, size
 
-        font = sdl2.ext.FontTTF(filename, size, (255,255,255))
+
+
+
+        file = RESOURCES.get_path(filename)
+        font = sdl2.ext.FontTTF(file, size, (255,255,255))
         self.cmap = {}
         tot = 0
 
@@ -630,7 +643,6 @@ class FontManager():
 
 class SoundManager():
     def __init__(self, folder):
-        self.RESOURCES = sdl2.ext.Resources(__file__, 'assets')
         self.sounds = {}
         self.song = None
         self.is_init = False
@@ -645,7 +657,7 @@ class SoundManager():
             self.is_init = True
     
     def load(self, name, volume=1):
-        file = self.RESOURCES.get_path(name)
+        file = RESOURCES.get_path(name)
         sample = sdl2.sdlmixer.Mix_LoadWAV(
                 sdl2.ext.compat.byteify(file, 'utf-8'))
 
@@ -655,7 +667,7 @@ class SoundManager():
         self.sounds[os.path.splitext(name)[0]] = sample
     
     def music(self, name, loops=-1, volume=1):
-        file = self.RESOURCES.get_path(name)
+        file = RESOURCES.get_path(name)
         sdl2.sdlmixer.Mix_VolumeMusic(int(volume*128))
         music = sdl2.sdlmixer.Mix_LoadMUS(
                     sdl2.ext.compat.byteify(file, 'utf-8'))
@@ -692,3 +704,20 @@ class SoundManager():
         sdl2.sdlmixer.Mix_CloseAudio()
         sdl2.SDL_Quit(sdl2.SDL_INIT_AUDIO)
         print('SoundManager closed')
+
+from collections.abc import Mapping
+def deep_update(d, u):
+    for k, v in u.items():
+        # this condition handles the problem
+        if not isinstance(d, Mapping):
+            d = u
+        elif isinstance(v, Mapping):
+            r = deep_update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+
+    return d
+
+def range_list(start, low, high, step):
+    return [str(i) for i in range(start, high, step)] + [str(i) for i in range(low, start, step)]
