@@ -389,7 +389,7 @@ class ImageManager():
         elif fn in self.images:
             return self.images[fn]
 
-        elif isinstance(fn, str) and os.path.isfile(fn):
+        elif isinstance(fn, str):
             try:
                 if os.path.exists(fn):
                     surf = sdl2.ext.image.load_img(fn)
@@ -706,18 +706,19 @@ class SoundManager():
         print('SoundManager closed')
 
 from collections.abc import Mapping
-def deep_update(d, u):
+def deep_update(d, u, r=False):
+    '''Add contents of dict u to a copy of dict d'''
+    o = d if r else {}
     for k, v in u.items():
-        # this condition handles the problem
         if not isinstance(d, Mapping):
-            d = u
+            o = u
         elif isinstance(v, Mapping):
-            r = deep_update(d.get(k, {}), v)
-            d[k] = r
+            r = deep_update(d.get(k, {}), v, True)
+            o[k] = r
         else:
-            d[k] = u[k]
-
-    return d
+            o[k] = u[k]
+    return o
 
 def range_list(start, low, high, step):
-    return [str(i) for i in range(start, high, step)] + [str(i) for i in range(low, start, step)]
+    return [str(i) for i in range(start, high+1, step)] + [
+            str(i) for i in reversed(range(start-step, low-1, -step))]

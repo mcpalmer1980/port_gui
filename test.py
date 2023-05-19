@@ -16,10 +16,9 @@ def main():
         with open('defaults.json') as inp:
             defaults = json.load(inp)
         deep_update(defaults, config)
-        #defaults.update(config) # TODO DEEP UPDATE
         config = defaults
-    logical_size = config.get('options', {}).get('logical_size', DEFAULT_SIZE)
 
+    logical_size = config.get('options', {}).get('logical_size', DEFAULT_SIZE)
     sdl2.ext.init()
     mode = sdl2.ext.displays.DisplayInfo(0).current_mode
     if 'window' in sys.argv:
@@ -52,10 +51,12 @@ def main():
         print(config['options']['music'])
         PlaySound.music(config['options']['music'], volume=.3)
 
-    background = Region(screen, config['background'], images, fonts)
-    mainlist = Region(screen, config['mainlist'], images, fonts)
-    maininfo = Region(screen, config['maininfo'], images, fonts)
-    mainlist.select = Region(screen, config['list'], images, fonts)
+
+    Region.set_defaults({}, screen, images, fonts)
+    background = Region(config['background'])
+    mainlist = Region(config['mainlist'])
+    maininfo = Region(config['maininfo'])
+    mainlist.select = Region(config['list'])
     buttons = images.load_atlas('buttons.png', config['buttons.png'])
 
     blist = list(buttons.keys()) ; picked = 0 ; where = Rect(340,240, 90,90)
@@ -146,14 +147,14 @@ def keyboard(text=''):
 
     upper = False
     fakeimages = ImageManager(screen)
-    keyboard = Region(screen, d, fakeimages, fonts)
+    keyboard = Region(d)
     keyboard.list = kbl
     kb = [[k for k in row if k] for row in keyboard.list]
     keyboard.selected = keyboard.selectedx = 1
-    keyboard.select = Region(screen, config['list'], images, fonts)
+    keyboard.select = Region(config['list'])
     keyboard.select.fontsize = keyboard.fontsize
     keyboard.select.align = 'center'
-    background = Region(screen, config['background'], images, fonts)
+    background = Region(config['background'])
     background.fontsize = keyboard.fontsize
     background.borderx = keyboard.area.x
     #background.align = 'topright'
@@ -228,7 +229,7 @@ options = {
     "Nothing": None,
     "Another": "Message",
     "Five Options": ["One", "Two", "Three", "Extra", "V"],
-    "Volume": range_list(60, 0, 100, 5),
+    "Volume": range_list(60, 0, 100, 7),
     "Clicked": "checked",
     "Click Me Please": "unchecked",
 }
@@ -257,6 +258,8 @@ def make_bar(d):
             selectable.append(i)
         else:
             bars.append(k)
+
+    #selectable = list(range(len(bars))) tested selectable labels
     return bars, selectable
 
 def option_test():
@@ -273,11 +276,11 @@ def option_test():
         #"barwidth": None,
         "roundness": 12}
 
-    region = Region(screen, d, images, fonts)
+    region = Region(d)
     region.list = bars
     region.selected = 1; region.selectedx = 0
-    region.select = Region(screen, config['list'], images, fonts)
-    background = Region(screen, config['background'], images, fonts)
+    region.select = Region(config['list'])
+    background = Region(config['background'])
 
     region.selected = selected = 0
     running = update = 1
@@ -318,7 +321,6 @@ def option_test():
 
             region.selected = selectable[selected]
 
-
         if update:
             background.draw()
             region.draw()
@@ -327,24 +329,20 @@ def option_test():
         sdl2.timer.SDL_Delay(1000//30)
 
 
-
-
-
-
 def game_list():
     #global config, screen, fonts, images, inp
     files = sorted([os.path.join(image_path,f) for f in os.listdir(image_path) if f.endswith('.png')])
     names = [os.path.splitext(os.path.split(f)[-1])[0] for f in files]
 
-    background = Region(screen, config['background'], images, fonts)
-    gamelist = Region(screen, config['gamelist'], images, fonts)
+    background = Region(config['background'])
+    gamelist = Region(config['gamelist'])
     
-    gamelist.select = Region(screen, config['list'], images, fonts)
+    gamelist.select = Region(config['list'])
     gamelist.select.fontsize = gamelist.fontsize
-    gametext = Region(screen, config['gametext'], images, fonts)
-    gameimage = Region(screen, config['gameimage'], images, fonts)
+    gametext = Region(config['gametext'])
+    gameimage = Region(config['gameimage'])
     if 'gamebar' in config:
-        gamebar = Region(screen, config['gamebar'], images, fonts)
+        gamebar = Region(config['gamebar'])
 
     background.text = names[0]
     gamelist.list = names
@@ -388,7 +386,7 @@ def game_list():
             gametext.text = files[gamelist.selected].replace('/', ' ') * 5
             update = True
         
-        if gametext.update():
+        if gametext.update(inp):
             update = True
         
         if update:

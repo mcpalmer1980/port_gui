@@ -15,7 +15,7 @@ CLASSES:
 '''
 import os, sys
 import sdl2, sdl2.ext, sdl2.sdlmixer
-from utility import Rect, Image, ImageManager, FontManager, RESOURCES
+from utility import *
 
 try:
     import sdl2.sdlgfx as sdlgfx
@@ -24,13 +24,7 @@ except:
 
 '''
 TODO
-    Checkbox, Option, Slider, Selector(trigger), 
-        label = string
-        checkbox = string, checked/unchecked
-        option = selected, remaining, options, not, selected, now
-        slider = int 0-100
-        slider = ints current, min, step, max
-
+    Fix image/text confusion in bars
     Text horiz scrolling
     Text animation (rotation, scaling, color changing)
     Tiled image rendering
@@ -92,11 +86,12 @@ class Region:
     font, fontsize, fontcolor, text, align
     scrollable, autoscroll, wrap, linespace
     '''
-    def __init__(self, renderer, data, images, fonts):
-        self._dict = data
-        self.renderer = renderer
-        self.images = images
-        self.fonts = fonts
+    DATA = {}; RENDERER=None; IMAGES=None; FONTS=None
+    def __init__(self, data, renderer=None, images=None, fonts=None):
+        self._dict = deep_update(Region.DATA, data)
+        self.renderer = renderer or Region.RENDERER
+        self.images = images or Region.IMAGES
+        self.fonts = fonts or Region.FONTS
 
         self.area = self._verify_rect('area')
         self.fill = self._verify_color('fill', optional=True)
@@ -107,13 +102,13 @@ class Region:
         self.bordery = self._verify_int('bordery', self.borderx) or 0
         self.borderx = self._verify_int('borderx', self.borderx)
 
-        self.image = self.images.load(data.get('image'))      # TODO self._verify_file('image', optional=True)
+        self.image = self.images.load(data.get('image', self.DATA.get('image')))
         self.imagesize = self._verify_ints('imagesize', 2, None, optional=True)
         self.imagemode = self._verify_option('imagemode', 
                 ('fit', 'stretch', 'repeat', None), 'fit')
         self.imagealign = self._verify_option('imagealign', Rect.POINTS, None)
         self.patch = self._verify_ints('patch', 4, optional=True)
-        self.pimage = self.images.load(data.get('pimage'))
+        self.pimage = self.images.load(data.get('pimage', self.DATA.get('pimage')))
         if self.patch and not self.pimage:
             self.pimage = self.image
             self.image = None
@@ -146,9 +141,15 @@ class Region:
             raise Exception('Cannot define text and a list')
 
         self.scroll_pos = 0
-        self.scroll_delay = 0
+        self.scroll_delay = -self.autoscroll*2
         self.selected = 0
         self.selectedx = -1
+
+    def set_defaults(data, renderer, images, fonts):
+        Region.DATA = data
+        Region.RENDERER = renderer
+        Region.IMAGES = images
+        Region.FONTS = fonts
 
     def draw(self, area=None, text=None, image=None):
         '''
@@ -288,13 +289,28 @@ class Region:
                 irect.y += itemsize
                 i += 1
 
-    def update(self):
+    def update(self, inp):
         updated = False
-        self.scroll_delay += 1
         if self.autoscroll:
-            if not self.scroll_delay % self.autoscroll:
+            self.scroll_delay += 1
+            if self.scroll_delay >= self.autoscroll:
+                self.scroll_pos += 1
+                self.scroll_delay = 0
+                if self.scroll_pos > len(self.text):
+                    self.scroll_delay = -self.autoscroll
+                    self.scroll_pos = 0
+                updated = True
+
+        elif self.text and self.scrollable:
+            if inp.pressed == 'up':
+                updated = True
+                self.scroll_pos -= 1
+            elif inp.pressed == 'down':
                 self.scroll_pos += 1
                 updated = True
+            self.scroll_pos = min(max(0, self.scroll_pos), len(self.text)-1)
+
+        
         return updated
         
     @property
@@ -306,7 +322,7 @@ class Region:
             self.fonts.load(self.font, self.fontsize)
             text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
             self._text = self.fonts._split_lines(val, text_area)
-            self.scroll_delay = 0
+            self.scroll_delay = -self.autoscroll
             self.scroll_pos = 0
         else:
             self._text = val.split('\n')
@@ -320,7 +336,7 @@ class Region:
         self._bar = self._verify_bar(None, val)
 
     def _verify_bar(self, name, default=None, area=None, optional=True):
-        vals = self._dict.get(name, default)
+        vals = self._dict.get(name) or Region.DATA.get(name, default)
         if vals == None and optional: return None
 
         if not isinstance(vals, (list, tuple)):
@@ -459,7 +475,7 @@ class Region:
 
     def _verify_rect(self, name, default=None, optional=False):
         # AREA
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         try:
@@ -478,7 +494,7 @@ class Region:
         return val
 
     def _verify_color(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         try:
@@ -496,7 +512,7 @@ class Region:
         return val
 
     def _verify_int(self, name, default=0, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, int):
@@ -505,7 +521,7 @@ class Region:
         return val
     
     def _verify_file(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, str):
@@ -516,7 +532,7 @@ class Region:
         return val
     
     def _verify_bool(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if val in (True, False, 0, 1):
@@ -527,7 +543,7 @@ class Region:
             raise Exception(f'{name} is not BOOL')
     
     def _verify_option(self, name, options, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
       
         if val not in options:
@@ -535,7 +551,7 @@ class Region:
         return val
     
     def _verify_text(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if isinstance(val, str):
@@ -545,7 +561,7 @@ class Region:
             raise(f'{name} is not text')
     
     def _verify_list(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, (list, tuple)):
@@ -558,7 +574,7 @@ class Region:
         return val
     
     def _verify_ints(self, name, count, default=None, optional=False):
-        val = self._dict.get(name, default)
+        val = self._dict.get(name) or Region.DATA.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, (list, tuple)):
