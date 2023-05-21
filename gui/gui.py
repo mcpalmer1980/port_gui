@@ -415,10 +415,10 @@ class Region:
         for i, (dest, item) in enumerate(bar):
             if i == selected:
                 if isinstance(self.select, Region):
-
                     if isinstance(item, Image):
                         image = item; text = None
                     else:
+                        color = None
                         text = item; image = None
                     r = dest.inflated(self.borderx*2, self.bordery*2)
                     self.select.draw(dest, text, image)
@@ -690,6 +690,98 @@ def make_option_bar(d):
     #selectable = list(range(len(bars))) tested selectable labels
     return bars, selectable
 
+def keyboard(options, kbl, kbu, text=''):
+    '''
+    Display an on screen keyboard and allow user to enter/modify
+    a text string
+    options: dict of Region attributes for theming
+    kbl: list of strings or bar lists to represent keyboard keys
+         the final row must be: shift, space, backspace, and then Enter/Done
+    kbu: same as kbl but with upper case letters
+    test: optional string to edit, or blank by default
+    '''
+    def process_kb_list(key_list):
+        '''Expand strings into lists and remove None values
+           (for right aligned buttons) '''
+        n = []
+        for row in key_list:
+            if isinstance(row, str):
+                row = list(row)
+            n.append(row)
+        return n, [[k for k in row if k] for row in n]
+
+    upper = False
+    keyboard = Region(options)
+    keyboard.list, kb = process_kb_list(kbl)
+    shift, space, backspace, enter, *_ = keyboard.list[-1] 
+
+    keyboard.selected = keyboard.selectedx = 1
+    keyboard.select = Region(config['list'])
+    keyboard.select.fontsize = keyboard.fontsize
+    keyboard.select.align = 'center'
+    background = Region(config['background'])
+    background.fontsize = keyboard.fontsize
+    background.borderx = keyboard.area.x
+    #background.align = 'topright'
+    
+    background.text = old_text = text
+    running = update = 1
+    while running:
+        running += 1
+        inp.process()
+
+        if inp.pressed:
+            update = True
+            if inp.quit or inp.pressed in ('select', 'B'):
+                return ''
+            if inp.pressed == 'up':
+                keyboard.selected = (keyboard.selected - 1) % len(keyboard.list)
+                keyboard.selectedx = min(max(keyboard.selectedx, 0), len(kb[keyboard.selected])-1)
+            elif inp.pressed == 'down':
+                keyboard.selected = (keyboard.selected + 1) % len(keyboard.list)
+                keyboard.selectedx = min(len(kb[keyboard.selected])-1, max(keyboard.selectedx, 0))
+            elif inp.pressed == 'right':
+                keyboard.selectedx = (keyboard.selectedx+1) % len(kb[keyboard.selected])
+            elif inp.pressed == 'left':
+                keyboard.selectedx = (keyboard.selectedx-1) % len(kb[keyboard.selected])
+            elif inp.pressed == 'start':
+                return text.replace('_', ' ')
+            elif inp.pressed in ('X', 'Y'):
+                    keyboard.list, kb = process_kb_list(kbl if upper else kbu)
+                    upper = not upper
+            elif inp.pressed == 'L':
+                text = text[:-1]
+            elif inp.pressed == 'R':
+                text += '_'
+            elif inp.pressed == 'A':
+                key = kb[keyboard.selected][keyboard.selectedx]
+                if len(key) == 1:
+                    text += key
+                elif key == space:
+                    text += '_'
+                elif key == backspace:
+                    text = text[:-1]
+                elif key == shift:
+                    keyboard.list, kb = process_kb_list(kbl if upper else kbu)
+                    upper = not upper
+                elif key == 'DONE':
+                    return text.replace('_', ' ')
+
+            if text != old_text:
+                background.text = text
+                if fonts.width(text) > keyboard.area.width:
+                    background.align = 'topright'
+                else: background.align = 'topleft'
+
+        if update:
+            background.draw()
+            keyboard.draw()
+            screen.present()
+            old_text = text
+        update = False
+        sdl2.timer.SDL_Delay(1000//30)
+
+
 KEY_MAP = {
     sdl2.SDLK_UP: 'up',
     sdl2.SDLK_RIGHT: 'right',
@@ -738,6 +830,7 @@ class InputHandler():
     def process(self):
         events = sdl2.ext.get_events()
         self.pressed = None
+        self.update = False
         for e in events:
             if e.type == sdl2.SDL_QUIT:
                 self.quit = True
@@ -783,6 +876,9 @@ class InputHandler():
                         self.last_press = self.axes, a, self.pressed 
                         self.held_for = -self.REPEAT_DELAY
                 self.axes[a] = v
+            elif e.type == sdl2.SDL_WINDOWEVENT:
+                if e.window.event == sdl2.SDL_WINDOWEVENT_EXPOSED:
+                    self.update = True
             
         # HANDLE KEY REPEATS
         if self.last_press:

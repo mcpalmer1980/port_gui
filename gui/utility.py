@@ -9,7 +9,7 @@ ImageManager: class to load and cache images as Image objects in
 FontManager: class used to load and render fonts onto a pySDL
     render context
 """
-from ctypes import c_int, byref
+from ctypes import c_int, c_ubyte, byref
 import sdl2, sdl2.ext
 import os
 global RESOURCES, PlaySound
@@ -444,6 +444,17 @@ def get_text_size(font, text=''):
     if not text:
         return text_h.value
     return  text_w.value, text_h.value
+
+def get_color_mod(texture):
+    r, g, b = c_ubyte(0), c_ubyte(0), c_ubyte(0)
+    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
+    print('inside get', r.value,g.value,b.value)
+    return  r.value, g.value, b.value
+def set_color_mod(texture, color):
+    r, g, b = c_ubyte(color[0]), c_ubyte(color[1]), c_ubyte(color[2])
+    print('inside set', r.value,g.value,b.value)
+    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
+
 
 char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+&<^>~@/\\|(%)'''
 class FontManager():

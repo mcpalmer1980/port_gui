@@ -1,9 +1,17 @@
 {
     "options":
     {
-        "logical_size": [640, 480],
-        "click": "click.ogg",
-        "music": "music.mod"
+        "logical_size": [640, 480], 
+        "music": null
+    },
+    "background":
+    {
+        "area": [0.0,0.0,1.0,1.0],
+        "fill": [200,200,200],
+        "borderx": 8,
+        "font": "Roboto.ttf",
+        "fontsize": 36,
+        "fontcolor": [0,0,0]
     },
     "nine.png":
     {
@@ -15,32 +23,6 @@
         "arrow_l": [11,559,42,42,1],
         "circle": [64,547,62,62],
         "bar": [373,225,222,18]
-    },
-    "buttons.png":
-    {
-        "_A": [0,0, 180,180],
-        "_B": [180,0,180, 180],
-        "_X": [360,0,180, 180],
-        "_Y": [540,0,180, 180],
-        "start": [0,180,360,180],
-        "select": [360,180,360,180],
-        "_L": [0,360,270,180],
-        "_R": [270,360,270,180],
-        "unchecked": [720,0,180,180],
-        "checked": [900,0,180,180],
-        "more": [720,180,180,180],
-        "left": [900,180,90,180],
-        "right": [990,180,90,180],
-        "up": [900,360,180,90],
-        "down": [900,450,180,90]
-    },
-    "background":
-    {
-        "area": [0.0,0.0,1.0,1.0],
-        "borderx": 8,
-        "font": "Roboto.ttf",
-        "fontsize": 36,
-        "fontcolor": [0,0,0]
     },
     "mainlist":
     {
@@ -79,40 +61,9 @@
         "fontcolor": [0,0,0],
         "wrap": true
     },
-    "title":
-    {
-        "area": [0,0.45,0.75,0.55],   
-        "fill": [0,0,255],
-        "outline": [0,0,0],
-        "thickness": 8,
-        "roundness": 8,
-        "border": 4,
-        "bordery": 4,
-        "image": "dialog",
-        "imagemode": "fit",
-        "imagesize": null,
-        "pattern": "",
-        "repeat": false,
-        "patch": [32,32,32,32],
-        "imagealign": null,
-        "font": "Roboto.ttf",
-        "fontsize": 32,
-        "fontcolor": [255,255,255],
-        "text": null,
-        "wrap": false,
-        "linespace": 0,
-        "list": [["Left", "arrow_l"], ["Right", null, "arrow_r"]],
-        "itemsize": 30,
-        "selected": [0,0,0],
-        "align": "topleft",
-        "scrollable": true,
-        "autoscroll": null,
-        "bar": null,
-        "barspace" : 20
-    },
     "list":
     {
-        "area": [0,0,1,1],
+        "area": [0.0,0.0,1.0,1.0],
         "fill": [0,0,0],
         "color": [50,50,50],
         "pattern": "",
