@@ -78,7 +78,7 @@ class Region:
     '''
     For drawing a rectangular region on a renderer context
     Regions may have a fill color, outline, image, and/or text
-    Attributes are loaded from a json file
+    Attributes are loaded from a dict or json file
     
     area, color, thickness, outline, roundness, 
     image, pattern, repeat, stretch
@@ -88,6 +88,7 @@ class Region:
     '''
     DATA = {}; RENDERER=None; IMAGES=None; FONTS=None
     def __init__(self, data, renderer=None, images=None, fonts=None, name=''):
+        'Create a new Region for future drawing.'
         self.name=name
         self._dict = deep_merge(self.DATA, data)
 
@@ -152,6 +153,15 @@ class Region:
         self.selectedx = -1
 
     def set_defaults(data, renderer, images, fonts):
+        '''
+        Set global defaults for all Regions to reduce later parameter requirements
+
+        data: a dict of Region parameters that will apply to all regions, but will
+            be overriden by parameters sent when creating Region objects later
+        renderer: a sdl2.ext.renderer context to draw onto
+        images: a gui.ImageManager reference for loading images
+        fonts: a gui.FontManager reference for loading fonts
+        '''
         Region.DATA = data
         Region.RENDERER = renderer
         Region.IMAGES = images
@@ -159,7 +169,12 @@ class Region:
 
     def draw(self, area=None, text=None, image=None):
         '''
-        Draw all features of this Region'''
+        Draw all features of this Region
+        
+        area: override Region's area, used internally
+        text: override Region's text and list, used internally
+        image: override Region's image, used internally
+        '''
 
         area = area or self.area.copy()
         image = image or self.image
@@ -296,6 +311,12 @@ class Region:
                 i += 1
 
     def update(self, inp):
+        '''
+        Update current region based on given input and autoscrolling parameters
+
+        inp: reference to an gui.InputHandler to receive input
+        RETURNS: True if screen should redraw, otherwise False
+        '''
         updated = False
         if self.autoscroll:
             self.scroll_delay += 1
@@ -342,6 +363,7 @@ class Region:
         return self._text
     @text.setter
     def text(self, val):
+        'Process text for proper wrapping when user changes it.'
         if self.wrap:
             self.fonts.load(self.font, self.fontsize)
             text_area = self.area.inflated(-self.borderx*2, -self.bordery*2)
@@ -360,7 +382,14 @@ class Region:
         self._bar = self._verify_bar(None, val)
 
     def _verify_bar(self, name, default=None, area=None, optional=True):
-        vals = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        '''
+        Process bar list for future display and selection. Used internally.
+
+        name: key for Region dict to read bar list from
+        default: default value is None
+        area: override Region's area, used internally
+        '''
+        vals = self._dict.get(name, default)
         if vals == None and optional: return None
 
         if not isinstance(vals, (list, tuple)):
@@ -409,6 +438,9 @@ class Region:
         return left + right
 
     def _draw_bar(self, area, bar, selected=None):
+        '''
+        Draw bar in given area. Used internally
+        '''
         #mode, self.renderer.blendmode = self.renderer.blendmode, sdl2.SDL_BLENDMODE_BLEND
         #self.fonts.load(self.font, self.fontsize)
 
@@ -444,6 +476,9 @@ class Region:
 
 
     def _draw_patch(self, area, image):
+        '''
+        Draw 9-patch image in given area
+        ''' 
         target = area.copy()
         bounds = Rect.from_sdl(image.srcrect)
         texture = image.texture
@@ -498,8 +533,9 @@ class Region:
 
 
     def _verify_rect(self, name, default=None, optional=False):
-        # AREA
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'Verify that value of self._dict[name] is a usable Rect'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         try:
@@ -518,7 +554,9 @@ class Region:
         return val
 
     def _verify_color(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid RGB 3-tuple color'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         try:
@@ -536,7 +574,9 @@ class Region:
         return val
 
     def _verify_int(self, name, default=0, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid int value'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, int):
@@ -545,7 +585,11 @@ class Region:
         return val
     
     def _verify_file(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        ''''
+        verify that value of self._dict[name] is valid relative path,
+        absolute path, or RESOURCES asset
+        '''
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, str):
@@ -556,7 +600,9 @@ class Region:
         return val
     
     def _verify_bool(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid bool value'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if val in (True, False, 0, 1):
@@ -567,7 +613,9 @@ class Region:
             raise Exception(f'{name} is not BOOL')
     
     def _verify_option(self, name, options, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is in given options list'
+ 
+        val = self._dict.get(name, default)
         if val == None and optional: return None
       
         if val not in options:
@@ -575,7 +623,9 @@ class Region:
         return val
     
     def _verify_text(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid str of text'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if isinstance(val, str):
@@ -585,7 +635,9 @@ class Region:
             raise(f'{name} is not text')
     
     def _verify_list(self, name, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid list'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, (list, tuple)):
@@ -598,7 +650,9 @@ class Region:
         return val
     
     def _verify_ints(self, name, count, default=None, optional=False):
-        val = self._dict.get(name, default)# or Region.DATA.get(name, default)
+        'verify that value of self._dict[name] is valid list of ints'
+
+        val = self._dict.get(name, default)
         if val == None and optional: return None
 
         if not isinstance(val, (list, tuple)):
@@ -610,7 +664,35 @@ class Region:
                 raise Exception(f'{name}[{i}] == {v}, not an int')
         return val
 
-def option_menu(foreground, background, options):
+def option_menu(foreground, options, background=None, regions=[]):
+    '''
+    Display an option menu, handle input, and return selected
+    values. Users map press up or left to select an option, 
+    or press left, right, or left to adjust the selected option.
+    Press start to exit option screen, or B to exit option screen
+    reverting any changes to their original values.
+
+    foreground: a Region to draw option menu into
+    options: a dict of options to include in the menu
+             Each key is the name/description of the option
+             Each value defines the options for the checkbox
+
+    background: a background Region, or config['background'] by default
+    regions: a list of optional Regions to update() and draw() in
+             addition to the option_menu and background
+    
+    OPTIONS
+    checkbox: If the dict value is the str 'checked' or 'unchecked'
+              a checkbox is displayed with the 'checked' or 'unchecked'
+              image loaded from the ImageManager
+    list:     If the dict value is a list the first item is displayed
+              and others can be selected with left or right, rotating
+              the list. May use range_list function to create list of
+              numerical values to simulate a slider.
+    option    If the dict value is a string the key is displayed, along
+              with the 'more' image from ImageManager. If the option is
+              selected, option_menu returns the dict value
+    '''   
     bars, selectable = make_option_bar(options)
 
     region = Region(foreground)
@@ -662,6 +744,13 @@ def option_menu(foreground, background, options):
         sdl2.timer.SDL_Delay(1000//30)
 
 def make_option_bar(d):
+    '''
+    Converts a option dict into a list of bars compatible with the Region
+    class.
+
+    d: dict that works with the option_menu() function
+    RETURNS: a list of bars compatible with the Region list feature
+    '''
     checked = images.load('checked')
     unchecked = images.load('unchecked')
     more = images.load('more')
@@ -686,7 +775,6 @@ def make_option_bar(d):
         else:
             bars.append(k)
 
-    print(selectable)
     #selectable = list(range(len(bars))) tested selectable labels
     return bars, selectable
 
@@ -809,6 +897,24 @@ AXIS_MAP = {
     (0,1): 'right' }
 
 class InputHandler():
+    '''
+    Reads the SDL2 event que and generates a simple sets of input
+    that can be read throughout your program. You should call
+    InputHandler.process() every frame and read its 3 member
+    variables as needed.
+
+    quit: a quit message has been generated by the user
+        or operatin system. You should exit if this variable is True
+    update: your operating system has requested that 
+        your program redraws itself. Update the screen when this
+        variable is true
+    pressed: a button has been pressed, or a key with repeat enabled
+        has been held long enough to create another key event. Pressed
+        will be none if there are no new inputs, or one of several
+        string values: 'up', 'down', 'left', 'right', 'A', 'B', 'X',
+                       'Y', 'L', 'R', 'start', 'select'
+
+    '''
     REPEAT_RATE = 5
     REPEAT_DELAY = 10
     CAN_REPEAT =  ('up', 'down', 'right', 'left')
@@ -894,6 +1000,8 @@ class InputHandler():
 def set_globals(*globs):
     global config, screen, images, fonts, inp
     config, screen, images, fonts, inp = globs
+    #for k, v in globs.items():
+    #    globals()[k] = v
 
 
 

@@ -71,7 +71,7 @@ def key_test(text):
         'qwertyuiop',
         'asdfghjkl"',
         'zxcvbnm,.?',
-        (' ^ ', ' __ ', ' << ', None, 'DONE')]
+        (' ^ ', ' __ ', 'left', None, 'DONE')]
     key2 = [
         '1234567890',
         'QWERTYUIOP',
@@ -88,7 +88,7 @@ def key_test(text):
         "barspace": 0,
         "barwidth": 50,
         "roundness": 12}
-    keyboard(d, key1, key2, text)
+    return keyboard(d, key1, key2, text)
 
 
 def option_test():
@@ -117,7 +117,7 @@ def option_test():
         "Nothing": None,
         "Labels": None
         }
-    r = option_menu(region, config['background'], options)
+    r = option_menu(region, options, config['background'])
     
 
 
