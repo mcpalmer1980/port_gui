@@ -1,14 +1,58 @@
 """
-Utility functions for pySDL and mypyGUI
+Copyright (C) 2020, Michael C Palmer <michaelcpalmer1980@gmail.com>
 
-Rect: class used to represent and modify Rectangular regions
-Image: simple class to represent and draw textures and subtexture
-    regions onto a pySDL render context
-ImageManager: class to load and cache images as Image objects in
-    texture memory
-FontManager: class used to load and render fonts onto a pySDL
-    render context
+This file is part of pySDL2gui
+
+pySDLgui is a simple, low level gui module that handles input and draws multiple
+rectangular Regions using hardware GPU rendering. Written in python, pySDLgui
+uses pySDL2, a low level SDL2 wrapper also written in pure python with no other
+dependencies.
+
+This module is designed to produce full screen GUIs for lower powered
+GNU/Linux based retro handhelds using game controller style input, but it may
+prove useful on other hardware.
+
+The main building block of GUIs built with this module is the Region, which
+represents a rectangular area that can display text, lists, and images. Each
+Region has numerous attributes that should be defined in theme.json or
+defaults.json and can be used to change the look and feel of a GUI without
+change the program's code.
+
+CLASSES:
+    FontManager: class used to load and render fonts onto a pySDL
+        render context
+    Image: simple class to represent and draw textures and subtexture
+        regions onto a pySDL render context
+    ImageManager: class to load and cache images as Image objects in
+        texture memory
+    Rect: class used to represent and modify Rectangular regions
+    SoundManager: class used to load and play sound effects and music
+
+FUNCTIONS:
+    deep_merge: used internally to merge option dicts
+    deep_print: available to display nested dict items or save them to disk
+    deep_update: used internally to update an options dict from a second one
+    get_color_mod: get the color_mod value of a texture (not working)
+    get_text_size: get the size a text string would be if drawn with given font
+    range_list: generate a list of numerical values to select from in a option
+        menu, similar to a slider widget
+    set_color_mod: set the color_mod value of a texture (not working)
+    set_globals: sets the modules global values within this file's scope
+
+pySDL2gui is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+pytmx is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public
+License along with pySDL2gui.
+
+If not, see <http://www.gnu.org/licenses/>.
 """
+
 from ctypes import c_int, c_ubyte, byref
 import sdl2, sdl2.ext
 import os
@@ -41,6 +85,7 @@ class Rect:
         return r
 
     def copy(self):
+        'Returns a copy of the called Rect object'
         return Rect(self.x, self.y, self.width, self.height)    
 
     def fit(self, other):
@@ -51,7 +96,7 @@ class Rect:
 
     def fitted(self, other):
         '''
-        Return new Rect whith other centered and resized to fill self
+        Return new Rect with other centered and resized to fill self.
         Aspect ration is retained'''
         xr = self.width / other.width
         yr = self.height / other.height
@@ -65,17 +110,19 @@ class Rect:
 
     def from_corners(x, y, x2, y2):
         '''
-        Return a new rect using bottom and right coordinates instead
+        Creat a new rect using bottom and right coordinates instead
         of width and height'''
         return Rect(x, y, x2-x, y2-y)
     def from_sdl(r):
+        '''
+        Create a new rect based on the position and size of an sdl_rect
+        object'''
         return Rect(r.x, r.y, r.w, r.h)
 
     def inflate(self, x, y=None):
         '''
-        Add x to width and y to height of rect, or x to both
+        Add x to width and y to height of rect, or x to both.
         The rect will remain centered around the same point'''
-
         y = y if y != None else x
         self.x -= x // 2
         self.y -= y // 2
@@ -86,7 +133,6 @@ class Rect:
         Return a copy of self with x added to the width and y to the
         height of rect, or x to both. The rect will remain centered
         around the same point'''
-
         y = y if y != None else x
         nx = self.x - x // 2
         ny = self.y - y // 2
@@ -99,11 +145,10 @@ class Rect:
         self.x += x
         self.y += y
     def moved(self, x, y):
-        'Return copy of rect moved by x/y pixels'
+        'Return copy of self moved by x/y pixels'
         return Rect(
             self.x + x, self.y + y,
             self.width, self.height)
-
 
     def sdl(self):
         'Return my value as an sdl_rect'
@@ -118,7 +163,7 @@ class Rect:
         self.y = y; self.height = h
 
     def clip(self, other):
-        'Return copy of self cropped to fit inside other'
+        'Return copy of self cropped to fit inside other Rect'
         # LEFT
         if self.x >= other.x and self.x < other.x + other.width:
             x = self.x
@@ -299,19 +344,26 @@ class Rect:
         self.width, self.height = v
         self.center = cx, cy
    
-
-
 class Image():
     renderer = None
     '''
-    Class that draws holds the source rect and draws images
-    from a Texture'''
-
+    The Image class represents an image with its position, angle,
+    and flipped(x/y) status. An image references a Texture and
+    has a srcrect(Rect) to define which part of the Texture to
+    draw'''
     def __init__(self, texture, srcrect=None, renderer=None):
+        '''
+        Create a new Image from a texture and a source Rect.
+
+        :param texture: a sdl2.ext.Texture object to draw the image from
+        :param srcrect: a gui.Rect object defining which part of the
+            texture to draw
+        :param renderer: a sdl2.ext.Renderer context to draw into
+        '''
         renderer = renderer or Image.renderer
         if not renderer:
             raise Exception('No renderer context provided')
-        Image.renderer = Image.renderer or renderer
+        Image.renderer = Image.renderer or renderer # set default
 
         self.texture = texture
         if isinstance(srcrect, Rect):
@@ -336,7 +388,16 @@ class Image():
 
    
     def draw_at(self, x, y, angle=0, flip_x=None, flip_y=None, center=None):
-        'Draw image with topleft corner at x, y and at the original size'
+        '''
+        Draw image with topleft corner at x, y and at the original size.
+
+        x: x position to draw at
+        y: y position to draw at
+        angle: optional angle to rotate image
+        flip_x: optional flag to flip image horizontally
+        flip_y: optional flag to flip image vertically
+        center: optional point to rotate the image around if angle provided        
+        '''
         center = center or self.center
         angle = angle or self.angle
         if flip_x == None and flip_y == None:
@@ -347,10 +408,24 @@ class Image():
         self.renderer.copy(self.texture, self.srcrect,
                 dstrect=(x, y), angle=angle, flip=flip, center=center)
 
-    def draw_in(self, dest, angle=0, flip_x=None, flip_y=None, center=None):
-        'Draw image inside given Rect region (may squish or stretch image)'
+    def draw_in(self, dest, angle=0, flip_x=None, flip_y=None,
+                center=None, fit=False):
+        '''
+        Draw image inside given Rect region (may squish or stretch image)
+
+        dest: Rect area to draw the image into
+        angle: optional angle to rotate image
+        flip_x: optional flag to flip image horizontally
+        flip_y: optional flag to flip image vertically
+        center: optional point to rotate the image around if angle provided
+        fit: set true to fit the image into dest without changing its aspect
+             ratio    
+        '''
         center = center or self.center
         angle = angle or self.angle
+
+        if fit:
+            dest = self.srcrect.fitted(dest)
         if flip_x == None and flip_y == None:
             flip = 1 * bool(self.flip_x) | 2 * bool(self.flip_y)
         else:
@@ -369,19 +444,33 @@ class Image():
 
 class ImageManager():
     '''
-    Load images into Textures and cache them for later use'''
-    
-    MAX_IMAGES = 20
-    def __init__(self, screen):
-        'Pass a pySLD2.ext.Renderer to render into'
+    The ImageManager class loads images into Textures and caches them for later use
+    '''
+    MAX_IMAGES = 20 # maximum number of images to cache
+    def __init__(self, screen, max=None):
+        '''
+        Create a new Image manager that can load images into textures
+        
+        screen: sdl2.ext.Renderer context that the image will draw
+            into. A renderer must be provided to create new Texture
+            objects.
+        max: maximum number of images to cach before old ones are
+            unloaded. Defaults to ImageManager.MAX_IMAGES(20) 
+        '''
+        self.MAX_IMAGES = max or ImageManager.MAX_IMAGES
         self.screen = screen
         self.images = {}
         self.textures = {}
         self.cache = []
     
-    def load(self, fn, area=None):
+    def load(self, fn):
         '''
-        Load an image file into a Texture or receive a cached Texture'''
+        Load an image file into a Texture or receive a previously cached
+        Texture with that name.
+        
+        :param fn: filename(str) to load
+        :rvalue gui.Image: reference to the image just loaded or from cache
+        '''
         if fn in self.cache:
             i = self.cache.index(fn)
             self.cache.insert(0, self.cache.pop(i))
@@ -406,10 +495,19 @@ class ImageManager():
         
     def load_atlas(self, fn, atlas):
         '''
-        Load image fn, create Images from atlas dict, create
-        named shortcut in image dict
-        {'string_name': x, y, w, h} '''
+        Load image fn, create Images from an atlas dict, and create
+        a named shortcut for each image in the atlas.
 
+        :param fn: (str) filename of image to load into a texture
+        :param atlas: a dict representing each image in the file
+        :rvalue {}: dict of gui.Images in {name: Image} format
+
+        example atlas:
+        atlas = {
+            'str_name': (x, y, width, height),
+            'another_img: (32, 0, 32, 32)
+        }
+        '''
         images = {}
         if os.path.exists(fn):
             surf = sdl2.ext.image.load_img(fn)
@@ -431,6 +529,7 @@ class ImageManager():
         return images
     
     def _clean(self):
+        'Remove old images when MAX_IMAGES is reached'
         for fn in self.cache[self.MAX_IMAGES:]:
             texture = self.textures.pop(fn)
             texture.destroy()
@@ -438,28 +537,27 @@ class ImageManager():
 
 
 def get_text_size(font, text=''):
-    f = font.get_ttf_font()
+    '''
+    Calculate the size of given text using the given font, or if
+    no text is provided, then return the font's height instead
+
+    font: an existing sdl2.ext.FontTTF object
+    text: optional text string to generate size of
+    :rvalue (int, int) or int: (width(int), height(int)) if text provided,
+            or height(int) otherwise
+    '''
     text_w, text_h = c_int(0), c_int(0)
+    f = font.get_ttf_font()
     sdl2.sdlttf.TTF_SizeText(f, text.encode(), byref(text_w), byref(text_h))
     if not text:
         return text_h.value
     return  text_w.value, text_h.value
 
-def get_color_mod(texture):
-    r, g, b = c_ubyte(0), c_ubyte(0), c_ubyte(0)
-    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
-    print('inside get', r.value,g.value,b.value)
-    return  r.value, g.value, b.value
-def set_color_mod(texture, color):
-    r, g, b = c_ubyte(color[0]), c_ubyte(color[1]), c_ubyte(color[2])
-    print('inside set', r.value,g.value,b.value)
-    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
-
-
 char_map = ''' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,?!-:'"_=+&<^>~@/\\|(%)'''
 class FontManager():
     '''
-    Font renderer for use with pygame._sdl2
+    The FontManager class loads ttf TODO (otf?) fonts, caches them, and draws text 
+    into a sdl2.ext.Renderer context.
     '''
     def __init__(self, renderer):
         '''
@@ -480,7 +578,9 @@ class FontManager():
         Load a font for later rendering
 
         :param filename: path to a ttf or otf format font file
-        :param size: int point size for font or 'XXXpx' for pixel height
+        :param size: int point size for font or 'XXpx' for pixel height
+        :rvalue tuple: a (filename, size) 2-tuple representing the font in 
+            future draw() calls
         '''
         if not size:
             filename, cache = filename
@@ -489,9 +589,6 @@ class FontManager():
             self.cmap = self.cmaps[(filename, size)]
             self.blank = self.cmap[' ']
             return filename, size
-
-
-
 
         file = RESOURCES.get_path(filename)
         font = sdl2.ext.FontTTF(file, size, (255,255,255))
@@ -608,7 +705,7 @@ class FontManager():
         Uses currently loaded font
 
         :param text: text string to calculate width of
-        :rvalue: width of string in pixels
+        :rvalue int: width of string in pixels
         '''
         w = 0
         for c in text:
@@ -616,8 +713,14 @@ class FontManager():
         return w
 
     def _split_lines(self, text, dest, scale=1):
-        '''Create a series of lines that will fit on the provided
-        rectangle.'''        
+        '''
+        Create a series of lines that will fit in the provided rectangle.
+        
+        :param text: a text string
+        :param dest: a Rect object to wrap the text into
+        :param scale: scalar to multiply font size by, unused so far
+        :rvalue []: list of strings that fit within given area        
+        '''        
         final_lines = []
 
         max_height = dest.height
@@ -649,16 +752,21 @@ class FontManager():
         #line_count = len(final_lines)
         #line_height = self.height()
         #total_height = line_height * line_count
-
         return final_lines
 
 class SoundManager():
+    '''
+    The SoundManager class loads and plays sound files.
+    '''
     def __init__(self):
         self.sounds = {}
         self.song = None
         self.is_init = False
 
     def init(self):
+        '''
+        Initialize the sound system
+        '''
         if not self.is_init:
             if sdl2.SDL_Init(sdl2.SDL_INIT_AUDIO) != 0:
                 raise RuntimeError("Cannot initialize audio system: {}".format(SDL_GetError()))
@@ -668,6 +776,13 @@ class SoundManager():
             self.is_init = True
     
     def load(self, fn, name=None, volume=1):
+        '''
+        Load a given sound file into the Sound Manager
+
+        :param fn: filename for sound file to load
+        :param name: alternate name to use to play the sound instead of its filename
+        :param volume: default volume level to play the sound at, from 0.0 to 1.0
+        '''
         file = RESOURCES.get_path(fn)
         name = name or os.path.splitext(name)[0]
         sample = sdl2.sdlmixer.Mix_LoadWAV(
@@ -678,8 +793,15 @@ class SoundManager():
         sdl2.sdlmixer.Mix_VolumeChunk(sample, int(128*volume))
         self.sounds[name] = sample
     
-    def music(self, name, loops=-1, volume=1):
-        file = RESOURCES.get_path(name)
+    def music(self, fn, loops=-1, volume=1):
+        '''
+        Loads a music file and plays immediately plays it
+
+        :param fn: path to music file to load and play
+        :param loops: number of times to play song, or loop forever by default
+        :param volume: volume level to play music, between 0.0 and 1.0
+        '''
+        file = RESOURCES.get_path(fn)
         sdl2.sdlmixer.Mix_VolumeMusic(int(volume*128))
         music = sdl2.sdlmixer.Mix_LoadMUS(
                     sdl2.ext.compat.byteify(file, 'utf-8'))
@@ -696,9 +818,17 @@ class SoundManager():
         return sdl2.sdlmixer.Mix_MasterVolume(-1) / 128
     @volume.setter
     def volume(self, v):
+        'Set master volume level between 0.0 and 1.0'
         sdl2.sdlmixer.Mix_MasterVolume(int(v*128))
 
     def __call__(self, name, volume=1):
+        '''
+        Play a loaded sound with the given name
+
+        :param name: name of sound, either the filename(without extension) or
+            an alternate name provided to the load() method
+        :param volume: volume to play sound at, from 0.0 to 1.
+        '''
         sample = self.sounds.get(name)
         if sample:
             channel = sdl2.sdlmixer.Mix_PlayChannel(-1, sample, 0)
@@ -720,7 +850,14 @@ PlaySound = SoundManager()
 
 from collections.abc import Mapping
 def deep_update(d, u, r=False):
-    '''Add contents of dict u into dict d'''
+    '''
+    Add contents of dict u into dict d. This will change the provided
+    d parameter dict
+    
+    :param d: dict to add new values to
+    :param u: dict with values to add into d
+    :rvalue dict: the updated dict, same as d
+    '''
     o = d
     for k, v in u.items():
         if not isinstance(d, Mapping):
@@ -731,12 +868,28 @@ def deep_update(d, u, r=False):
         else:
             o[k] = u[k]
     return o
+
 def deep_merge(d, u, r=False):
-    '''Add contents of dict u to a copy of dict d'''
+    '''
+    Add contents of dict u into a copy of dict d. This will not change the
+    provided d parameter dict, only return a new copy.
+    
+    :param d: dict to add new values to
+    :param u: dict with values to add into d
+    :rvalue dict: the updated dict, same as d
+    '''
     n = deep_update({}, d)
     return deep_update(n, u)
 
 def deep_print(d, name=None, l=0, file=None):
+    '''
+    Pretty print a dict recursively, included all child dicts
+
+    :param d: dict to pring
+    :param name: name of dict to use in printing
+    :param l: used internaly
+    :param file: open file to print into instead of to the console
+    '''
     if name: print(f'{"  "*l}{name}', file=file)
     for k, v in d.items():
         if isinstance(v, Mapping):
@@ -746,10 +899,48 @@ def deep_print(d, name=None, l=0, file=None):
 
 
 def range_list(start, low, high, step):
+    '''
+    Creates a list of strings representing numbers within a given
+    range. Meant for use with gui.options_menu as an alternative to
+    a slider widget. The values will be a listin numerical order, but
+    rotated to have the start value first.
+
+    :param start: the value to start at (first value)
+    :param low: lowest value for list
+    :param hight: highest value for list
+    :param step: the numerical value between each item in the list
+    :rvalue list: a list of numerical values, rotate to have start value
+            first
+
+    example: range_list(50, 0, 100, 10) ->
+            [50, 60, 70, 80, 90, 100, 0, 10, 20, 30, 40]
+    '''
     return [str(i) for i in range(start, high+1, step)] + [
             str(i) for i in reversed(range(start-step, low-1, -step))]
 
 
+def get_color_mod(texture):
+    '''
+    Get color_mod value of a texture as an RGB 3-tuple
+    NOT WORKING
+    '''
+    r, g, b = c_ubyte(0), c_ubyte(0), c_ubyte(0)
+    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
+    print('inside get', r.value,g.value,b.value)
+    return  r.value, g.value, b.value
+
+def set_color_mod(texture, color):
+    '''
+    Set color_mod value of a texture using an RGB 3-tuple
+    NOT WORKING
+    '''
+    r, g, b = c_ubyte(color[0]), c_ubyte(color[1]), c_ubyte(color[2])
+    print('inside set', r.value,g.value,b.value)
+    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
+
 def set_globals(*globs):
+    '''
+    Set the global values within this files scope
+    '''
     global config, screen, images, fonts, inp
     config, screen, images, fonts, inp = globs

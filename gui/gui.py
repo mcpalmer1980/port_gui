@@ -1,6 +1,10 @@
-'''
-mypyGUI is a simple, low level gui module that handles input and draws multiple
-rectangular Regions using hardware GPU rendering. Written in python, mypyGUI
+"""
+Copyright (C) 2020, Michael C Palmer <michaelcpalmer1980@gmail.com>
+
+This file is part of pySDL2gui
+
+pySDLgui is a simple, low level gui module that handles input and draws multiple
+rectangular Regions using hardware GPU rendering. Written in python, pySDLgui
 uses pySDL2, a low level SDL2 wrapper also written in pure python with no other
 dependencies.
 
@@ -8,11 +12,42 @@ This module is designed to produce full screen GUIs for lower powered
 GNU/Linux based retro handhelds using game controller style input, but it may
 prove useful on other hardware.
 
+The main building block of GUIs built with this module is the Region, which
+represents a rectangular area that can display text, lists, and images. Each
+Region has numerous attributes that should be defined in theme.json or
+defaults.json and can be used to change the look and feel of a GUI without
+change the program's code.
+
 CLASSES:
-    Region: draws a rect region with backround, outline, image, lists, etc
     InputHandler: handles controller and keyboard input, mapping to simple
         string events such as 'up', 'left', 'A', and 'start'
-'''
+    Region: draws a rectangular region with a backround, outline, image,
+        lists, etc. The main building block of pySDL2gui GUIs
+
+FUNCTIONS:
+    keyboard: displays an onscreen keyboard to enter or edit a text string
+    make_option_bar: displays a scrolling options menu to edit options
+    set_globals: sets the modules global values within this file's scope
+
+DATA:
+    AXIS_MAP: maps controller axis to input strings ('left', 'start', 'A', etc.)
+    BUTTON_MAP: maps controller buttons to input strings 
+    KEY_MAP: maps keyboard keys to input strings
+    char_map: a string with each character that FontManager should be able to draw
+
+pySDL2gui is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+pytmx is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+You should have received a copy of the GNU Lesser General Public
+License along with pySDL2gui.
+
+If not, see <http://www.gnu.org/licenses/>.
+"""
 import os, sys
 import sdl2, sdl2.ext, sdl2.sdlmixer
 from .utility import *
@@ -998,6 +1033,9 @@ class InputHandler():
                     self.pressed = b
 
 def set_globals(*globs):
+    '''
+    Set the global values within this file's scope
+    '''
     global config, screen, images, fonts, inp
     config, screen, images, fonts, inp = globs
     #for k, v in globs.items():
