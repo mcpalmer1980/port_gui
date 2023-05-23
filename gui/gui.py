@@ -380,13 +380,13 @@ class Region:
                 selected = (selected-1) % l
                 while (selected) % l not in selectable:
                     selected = (selected-1) % l
-                PlaySound(self.click_sound)
+                sounds.play(self.click_sound)
                 updated = True
             elif inp.pressed == 'down':
                 selected = (selected+1) % l
                 while (selected) % l not in selectable:
                     selected = (selected+1) % l
-                PlaySound(self.click_sound)
+                sounds.play(self.click_sound)
                 updated = True
             if updated:
                 self.selected = selected

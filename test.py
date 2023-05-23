@@ -31,7 +31,7 @@ def main():
                 if selected == 'Exit':
                     running = 0
                 elif selected == 'Install Port':
-                    PlaySound('click')
+                    sounds.play('click')
                     game_list()
                 elif selected == "Onscreen Keyboard":
                     print(key_test('default'))
@@ -151,11 +151,11 @@ def game_list():
         if inp.pressed:
             if inp.pressed == 'right':
                 gamelist.selected += gamelist.page_size
-                PlaySound('click')
+                sounds.play('click')
                 running = 1
             elif inp.pressed == 'left':
                 gamelist.selected -= gamelist.page_size
-                PlaySound('click')
+                sounds.play('click')
                 running = 1
             elif inp.pressed in ('start', 'select'):
                 running = 0

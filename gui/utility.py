@@ -56,7 +56,7 @@ If not, see <http://www.gnu.org/licenses/>.
 from ctypes import c_int, c_ubyte, byref
 import sdl2, sdl2.ext
 import os
-global RESOURCES, PlaySound
+global RESOURCES, sounds
 RESOURCES = sdl2.ext.Resources(__file__, '../assets')
 
 class Point:
@@ -821,7 +821,7 @@ class SoundManager():
         'Set master volume level between 0.0 and 1.0'
         sdl2.sdlmixer.Mix_MasterVolume(int(v*128))
 
-    def __call__(self, name, volume=1):
+    def play(self, name, volume=1):
         '''
         Play a loaded sound with the given name
 
@@ -846,7 +846,7 @@ class SoundManager():
         sdl2.sdlmixer.Mix_CloseAudio()
         sdl2.SDL_Quit(sdl2.SDL_INIT_AUDIO)
         print('SoundManager closed')
-PlaySound = SoundManager()
+sounds = SoundManager()
 
 from collections.abc import Mapping
 def deep_update(d, u, r=False):
@@ -876,7 +876,7 @@ def deep_merge(d, u, r=False):
     
     :param d: dict to add new values to
     :param u: dict with values to add into d
-    :rvalue dict: the updated dict, same as d
+    :rvalue dict: the new dict with u merged into d
     '''
     n = deep_update({}, d)
     return deep_update(n, u)

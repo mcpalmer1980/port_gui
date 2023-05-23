@@ -57,7 +57,7 @@ GLOBAL OBJECTS:
     fonts: a FontManager used to render all the fonts used by pySDL2gui
     images: an ImageManager used to draw all the images used by pySDL2gui
     inp: an InputManager used to handle input from sdl2 events
-    PlaySound: a SoundManager used to play sounds and music within pySDL2gui
+    sounds: a SoundManager used to play sounds and music within pySDL2gui
     RESOURCES: a resource manager used to load resources from the assets subfolder
     screen: a sdl2.ext.Renderer context that pySDL2gui displays graphics into
 
@@ -126,13 +126,13 @@ def init():
     window.show()
 
     if 'sounds' in config:
-        PlaySound.init()
+        sounds.init()
         for k, v in config['sounds'].items():
             print('loading sound: ', v)
-            PlaySound.load(v, k)
+            sounds.load(v, k)
     if config['options'].get('music'):
-        PlaySound.init()
-        PlaySound.music(config['options']['music'], volume=.3)
+        sounds.init()
+        sounds.music(config['options']['music'], volume=.3)
 
     defaults = config.get('defaults', {})
     print('Defaults:', defaults)
