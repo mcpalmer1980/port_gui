@@ -119,10 +119,6 @@ def option_test():
         }
     r = option_menu(region, options, config['background'])
     
-
-
-
-
 def game_list():
     #global config, screen, fonts, images, inp
     files = sorted([os.path.join(image_path,f) for f in os.listdir(image_path) if f.endswith('.png')])

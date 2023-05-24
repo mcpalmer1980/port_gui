@@ -11,111 +11,110 @@ prove useful on other hardware.
 
 The main building block of GUIs built with this module is the Region, which
 represents a rectangular area that can display text, lists, and images. Each
-Region has numerous attributes that should be defined in theme.json or
-defaults.json and can be used to change the look and feel of a GUI without
+Region has numerous attributes that should be defined in the theme.json and
+defaults.json files, which can be used to change the look and feel of a GUI without
 changing the program's code.  
 
 ## CLASSES:
-**FontManager** - class used to load and render fonts onto a pySDL render context  
-**Image** - simple class to represent and draw textures and subtexture regions onto a pySDL render context  
-**ImageManager** - class to load and cache images as Image objects in texture memory
-**InputHandler** - handles controller and keyboard input, mapping to simple string events such as 'up', 'left', 'A', and 'start'  
-**Rect** - class used to represent and modify Rectangular regions  
-**Region** - draws a rectangular region with a backround, outline, image, lists, etc. The main building block of pySDL2gui GUIs  
-**SoundManager** - class used to load and play sound effects and music  
+**FontManager** - The class used to load and render fonts onto an sdl2.ext.renderer context  
+**Image** - The class used to draw images onto an sdl2.ext.renderer context. An image can be any portion of a texture containing many images, and it can scale, flip, and rotate the image.  
+**ImageManager** - The class used to load and cache images in texture memory, and to store associated Image objects.  
+**InputHandler** -The class that handles controller and keyboard input, mapping them into simple string events such as 'up', 'left', 'A', and 'start'  
+**Rect** - The class that represents rectangular regions and can maniputate them.  
+**Region** - This class is the primary building back of pySDL2gui interfaces. It draws a rectangular region with an optional backround, outline, image, text, and/or list. It is defined by attributes in a json file.  
+**SoundManager** - This class is used to load and play sound effects and music.  
 
 ## DATA:
-**AXIS_MAP** - maps controller axis to input strings ('left', 'start', 'A', etc.)  
-**BUTTON_MAP** - maps controller buttons to input strings  
-**KEY_MAP** - maps keyboard keys to input strings  
-**char_map** - a string with each character that FontManager should be able to draw  
+**AXIS_MAP** - A dict that maps controller axises to input strings ('left', 'right', 'up', etc).  
+**BUTTON_MAP** - A dict that maps controller buttons to input strings ('up', 'A', 'L', etc).  
+**KEY_MAP** - A dict that maps keyboard keys to input strings ('up', 'A', 'L', etc).  
+**char_map** - A string containing each character that FontManager is able to draw.  
 
 ## FUNCTIONS:
-**deep_merge** - used internally to merge option dicts  
-**deep_print** - available to display nested dict items or save them to disk  
-**deep_update** - used internally to update an options dict from a second one  
-**get_color_mod** - get the color_mod value of a texture (not working)  
-**get_text_size** - get the size a text string would be if drawn with given font  
-**keyboard** - displays an onscreen keyboard to enter or edit a text string  
-**make_option_bar** - displays a scrolling options menu to edit options  
-**range_list** - generate a list of numerical values to select from in a option menu, similar to a slider widget  
-**set_color_mod** - set the color_mod value of a texture (not working)  
-**set_globals** - sets the modules global values within this file's scope  
+**deep_merge** - used internally to merge option dicts.  
+**deep_print** - available to display nested dict items or save them to disk.  
+**deep_update** - used internally to update one options dict from a second one.  
+**get_color_mod** - gets the color_mod value of a texture (not working).  
+**get_text_size** - gets the size a text string would be if drawn with the given font.  
+**keyboard** - displays an onscreen keyboard to enter or edit a text string.  
+**make_option_bar** - displays a scrolling options menu to edit program options.  
+**range_list** - generates a list of numerical values to select from in a option menu, providing functionality similar to a slider widget.  
+**set_color_mod** - sets the color_mod value of a texture (not working).  
+**set_globals** - sets the module's global values within eac file's scope.  
 
 # GLOBAL OBJECTS:
-**config** - a dict full of options and Region definitions loaded from theme.json and default.json  
-**fonts** - a FontManager used to render all the fonts used by pySDL2gui  
-**images** - an ImageManager used to draw all the images used by pySDL2gui  
-**inp** - an InputManager used to handle input from sdl2 events  
-**RESOURCES** - a resource manager used to load resources from the assets subfolder  
-**sounds** - a SoundManager used to play sounds and music within pySDL2gui  
-**screen** - a sdl2.ext.Renderer context that pySDL2gui displays graphics into  
+**config** - a dict full of options and Region definitions loaded from theme.json and default.json/  
+**fonts** - a FontManager used to render all the fonts used by pySDL2gui.  
+**images** - an ImageManager used to draw all the images used by pySDL2gui.  
+**inp** - an InputManager used to handle input from sdl2 events.  
+**RESOURCES** - a resource manager used to load resources from the assets subfolder.  
+**sounds** - a SoundManager used to play sounds and music within pySDL2gui.  
+**screen** - an sdl2.ext.Renderer context that pySDL2gui displays graphics into.  
 
  
 # FontManager class
-The FontManager class loads ttf TODO (otf?) fonts, caches them, and draws text 
-into a sdl2.ext.Renderer context.
+The FontManager class loads ttf and otf font files, caches them, and draws text 
+into an sdl2.ext.Renderer context.
  
 **init**( renderer)  
-Initialize FontManager for use with pySDL2.ext.Renderer context
- 
+Initialize FontManager for use with a pySDL2.ext.Renderer context  
+
 - *renderer*: pySDL2.ext.Renderer to draw on
 
 **draw**(text, x, y, color=None, alpha=None, align='topleft', clip=None, wrap=None, linespace=0, font=None)  
-Draw text string onto pySDL2.ext.Renderer context
+Draw a text string onto a pySDL2.ext.Renderer context.
  
 - *text*: string to draw
 - *x*: x coordinate to draw at
 - *y*: y coordinate to draw at
 - *color*: (r,g,b) color tuple
 - *alpha*: alpha transparency value
-- *align*: treat x as 'center' or 'right' pos (def left)
-- *valign*: treat y as 'center' or 'bottom' pos (def top)
-- *clip*: clip text to Rect
-- *wrap*: #TODO wrap text over multiple lines, using clip Rect
-- *font*: (filename, size) tuple for font, defaults to last_loaded
-- *rvalue*: rect*: actual area drawn into
+- *align*: a string determining the text's alignment. It can be: topleft, midtop, topright, midleft, center, midright, bottomleft, midbottom, bottomright
+- *clip*: clip the text to this Rect
+- *wrap*: wrap text over multiple lines, using the clip Rect
+- *font*: the (filename, size) tuple for a loaded font to draw with, otherwise the most recently loaded font is used.
+- *rvalue*: (Rect) the actual area drawn into
 
-**load**(filename, size=None)
-Load a font for later rendering  
+**load**(filename, size=None)  
+Loads a font for future drawing.  
 
 - *filename*: path to a ttf or otf format font file
-- *size*: int point size for font or 'XXpx' for pixel height
+- *size*: point size(int) for the font, or a string ending with px(ex '12px') to use pixel height instead
 - *rvalue tuple*: a (filename, size) 2-tuple representing the font in 
     future draw() calls
 
 **width**(text, scale=1)  
-Calculate width of given text not including motion or scaling effects
-Uses currently loaded font  
+Calculate the width of given text using the currently loaded font.  
  
-- *text*: text string to calculate width of
-- *rvalue*: (int) width of string in pixels  
+- *text*: a text string to calculate the width of
+- *rvalue*: (int) width of the string in pixels  
  
 # Image class
-**init**(self, texture, srcrect=None, renderer=None)
+The Image class is used to draw images onto an sdl2.ext.renderer context. An image can be any portion of a texture that contains multiple images, and it can scale, flip, and rotate the image. The ImageHandler uses this class internally, and while using Image objects to draw images is common, users should rarely need to manually create them.   
+
+**init**(self, texture, srcrect=None, renderer=None)  
 Create a new Image from a texture and a source Rect.  
  
-- *texture*: a sdl2.ext.Texture object to draw the image from
-- *srcrect*: a gui.Rect object defining which part of the
-    texture to draw
-- *renderer*: a sdl2.ext.Renderer context to draw into
+- *texture*: an sdl2.ext.Texture object to draw the image from
+- *srcrect*: a gui.Rect object defining which part of the texture to draw
+- *renderer*: an sdl2.ext.Renderer context to draw into
 
-**draw**()
-Draw image into its current destrect(Rect region), which defaults to
-full screen maintaining aspect ratio  
+**draw**()  
+Draw the image into its current dstrect, which defaults to full screen maintaining its aspect ratio.  
 
 **draw_at**(x, y, angle=0, flip_x=None, flip_y=None, center=None)  
-Draw image with topleft corner at x, y and at the original size.
+Draw the image with its topleft corner at x, y and at its original size.  
 
 - *x*: x position to draw at
 - *y*: y position to draw at
-- *angle*: optional angle to rotate image
+- *angle*: optional angle to rotate the image
 - *flip_x*: optional flag to flip image horizontally
 - *flip_y*: optional flag to flip image vertically
 - *center*: optional point to rotate the image around if angle provided
 
 **draw_in**(dest, angle=0, flip_x=None, flip_y=None, center=None, fit=False)  
-Draw image inside given Rect region (may squish or stretch image)  
+Draw the image inside a given Rect, which may squish or stretch the image unless the optional
+fit flag is set positive.
  
 - *dest*: Rect area to draw the image into
 - *angle*: optional angle to rotate image
@@ -125,55 +124,54 @@ Draw image inside given Rect region (may squish or stretch image)
 - *fit*: set true to fit the image into dest without changing its aspect ratio  
  
 # ImageManager class   
-The ImageManager class loads images into Textures and caches them for later use  
+The ImageManager class loads images into Textures and caches them for later use.  
  
 **init**(screen, max=None)  
-Create a new Image manager that can load images into textures
+Create a new Image manager that can load images into textures.  
  
-- *screen*: sdl2.ext.Renderer context that the image will draw
+- *screen*: the sdl2.ext.Renderer context that the image will draw
     into. A renderer must be provided to create new Texture
-    objects.
-- *max*: maximum number of images to cach before old ones are
-    unloaded. Defaults to ImageManager.MAX_IMAGES(20)
+    objects
+- *max*: the maximum number of images to cache before old ones are
+    unloaded. Defaults to ImageManager.MAX_IMAGES, currently 20
 
 **load**(fn)  
 Load an image file into a Texture or receive a previously cached
-Texture with that name.  
+Image with that name.  
  
 - *fn*: filename(str) to load
-- *rvalue*: reference to the gui.Image just loaded or from cache
+- *rvalue*: a reference to the gui.Image that was loaded from disk or cache
 
 **load_atlas**(self, fn, atlas)  
 Load image fn, create Images from an atlas dict, and create
 a named shortcut for each image in the atlas.  
  
-- *fn*: (str) filename of image to load into a texture
-- *atlas*: a dict representing each image in the file
+- *fn*: (str) the filename of an image file to load into a texture
+- *atlas*: a dict representing each image in the file, with each key being the image's name, and the value being a tuple. The tuple should be either (x, y, width, height), or optionally (x, y, width, height, flip_x, flip_y, angle)
 
 ```py
         #example atlas:
         atlas = {
             'str_name': (x, y, width, height),
-            'another_img: (32, 0, 32, 32)
+            'another_img': (32, 0, 32, 32)
         }
 ```
-- *rvalue*: dict of gui.Images in {name*: Image} format
+- *rvalue*: dict of gui.Images in {name: Image} format
 
 # InputHandler class
 
-Reads the SDL2 event que and generates a simple sets of input
-that can be read throughout your program. You should call
-InputHandler.process() every frame and read its 3 member
-variables as needed.  
+The InputHandler class reads the SDL2 event que and generates a simple set of inputs
+that can be read throughout your program. You should call InputHandler.process() every
+frame and read its 3 member variables as needed.  
  
-- *quit:* a quit message has been generated by the user or operating system.
+- *quit:*   a quit message has been generated by the user or operating system.
 You should exit if this variable is True.  
 
 - *update:* your operating system has requested that your program redraws
-itself. Update the screen when this variable is true.
+itself. Update the screen when this variable is True.
 
 - *pressed:* a button has been pressed, or a key with repeat enabled has
-been held long enough to trigger another event. Pressed will be none if
+been held long enough to trigger another event. Pressed will be None if
 there are no new inputs, or one of several string values:
 
     up, down, left, right, A, B, X, Y, L, R, start, select  
@@ -197,33 +195,33 @@ This class defines a rectangular region and allows you to manipulate them.
 - *width*: the width of the Rect, in pixels
 - *height*: the height of the Rect, in pixels
 
-__mul__(self, v)  
-Scales the Rect by scalar v, keeping center in position. So .5 halves the size, and 2 doubles it.
+**\_\_mul\_\_**(self, v)  
+Scales the Rect by scalar v, keeping its center in the same position. This function overloads the * operator, so _r * 2_ will double the size Rect r, and _q * .5_ will halve the size of Rect q.
 
 **clip**(other)  
 Returns a copy of the Rect cropped to fit inside another Rect.
 
 **copy**()  
-Returns a new copy of the Rect
+Returns a new copy of the Rect.
 
 **fit**( other)  
-Moves and resizes a Rect to fill another Rect, maintaining its aspect ratio while centering it.
+Moves and resizes this Rect(self) to fill another Rect(other), maintaining its aspect ratio while centering it.
 
 **fitted**(other) 
-Return a new Rect that is a copy of another Rect that's centered and resized to fill the Rect the method is called from. Its aspect ratio is retained.
+Return a new Rect that is a copy of another Rect(other) that has been centered and resized to fill this Rect(self). Its aspect ratio is retained.
 
-**from_corners**(x, y, x2, y2)
-A static method that creates a new rect using bottom and right coordinates instead of width and height.
+**from_corners**(x, y, x2, y2)  
+A static method that creates a new rect using the bottom and right coordinates instead of width and height.
 
 **from_sdl**( r )  
 A static method that creates a new rect based on the position and size of an sdl_rect object
 
 **inflate**(x, y=None)  
-Add x to the width and y to height of rect, or x to both if y remains undefined. The rect remains centered around the same central point. Negative numbers shrink the Rect.
+Add x to the width and y to height to the Rect, or x to both the width and height if y is undefined. The rect remains centered around the same central point. Negative numbers shrink the Rect.
 
 **inflated**(x, y=None)  
 Return a copy of the Rect with x added to its width and y to its height,
-or x to both if y remains undefined. The rect remains centered around the same central point. Negative numbers shrink the Rect.
+or x to both the width and height if y is undefined. The rect remains centered around the same central point. Negative numbers shrink the Rect.
 
 **move**(x, y)  
 Move the Rect by x pixels horizontally, and y pixels vertically.  
@@ -232,19 +230,20 @@ Move the Rect by x pixels horizontally, and y pixels vertically.
 Return a copy of the Rect that has been moved x pixels horizontally, and y pixels vertically.  
 
 **sdl**()  
-Returns an sdl_rect object with the same size and position of the Rect
+Returns an sdl_rect object with the same size and position of the Rect.
 
 **tuple**()  
 Return a 4-tuple copy of the Rect in an (x, y, width, height) format.
 
 **update**(x, y, w, h)  
-Update myself with a new position and size. Useful for replacing a Rect with a new one while retaining references to the old one. 
+Update the Rect with a new position and size. Useful for replacing a Rect with a new one while retaining references to the old one. 
 
 **Special Attributes**  
 Rects have numerous attributes that allow you to read and change the position of its center, corners, and edges.
 
 - bottom - y coordinate for the bottom edge of the Rect
 - bottomleft - (x, y) tuple for the bottom left corner of the Rect
+- bottomright - (x, y) tuple for the bottom right corner of the Rect
 - center - (x, y) tuple for the Rect's centeral point
 - centerx - x coordinate of the Rect's central point
 - centery - y coordinate of the Rect's central point
@@ -254,9 +253,9 @@ Rects have numerous attributes that allow you to read and change the position of
 - midbottom - (x, y) coordinate for the center of the Rect's bottom edge
 - midleft - (x, y) coordinate for the center of the Rect's left edge
 - midright - (x, y) coordinate for the center of the Rect's right edge
-- midtop - (x, y) coordinate for teh center of the Rect's top edge
+- midtop - (x, y) coordinate for the center of the Rect's top edge
 - right - x coordinate for the right edge of the Rect
-- size - (w, h) size of the Rect. A Rect remains centered around the same point when size is changed
+- size - (w, h) size of the Rect. A Rect remains centered around the same point when its size is changed
 - top - y coordinate for the top edge of the Rect
 - topleft - (x, y) coordinate for the top left corner of the Rect
 - topright - (x, y) coordinate for the top right corner of the Rect

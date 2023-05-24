@@ -380,7 +380,7 @@ class Image():
         self.x = self.y = 0
         self.flip_x = self.flip_y = 0
         self.angle = 0
-        self.center = self.srcrect.w//2, self.srcrect.h//2
+        self.center = None
 
         # default dest rect is fitted to full screen
         self.dstrect = Rect.from_sdl(self.srcrect).fitted(
@@ -422,7 +422,7 @@ class Image():
              ratio    
         '''
         center = center or self.center
-        angle = angle or self.angle
+        angle = 45 #angle or self.angle
 
         if fit:
             dest = self.srcrect.fitted(dest)
