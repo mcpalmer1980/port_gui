@@ -1,46 +1,48 @@
 Region Options
-    FILL AND OUTLINE
-    area: 4-tuple of pixels or screen percent(0.0-1.0),
-    fill: 3-tuple fill color
-    outline: 3-typle outline color
-    thickness: int outline thickness,
-    roundness: int outline roundness,
-    border: int border around text x or x&y
-    bordery: int top/bottom border around text
+**FILL AND OUTLINE**
+- *area*: 4-tuple of pixels or screen percent(0.0-1.0),
+- *fill*: 3-tuple fill color
+- *outline*: 3-typle outline color
+- *thickness*: int outline thickness,
+- *roundness*: int outline roundness,
+- *border*: int border around text x&y
+- *borderx*: int left/right border around text
+- *bordery*: int top/bottom border around text
 
-    IMAGE RENDERING
-    image: filename for image
-    imagesize: 2-tuple (w,h) scale to this size
-    imagemode: 'fit', 'stretch', 'repeat', None or ''
-    imagealign: same options as text align, but for image
-    patch: 4-tuple - left, top, right, bottom edges for 9-patch rendering
-    pimage: filename or image to use for patch if different than image
-    pattern: bool image is a base64 string
+**IMAGE RENDERING**
+- *image*: filename for image
+- *imagesize*: 2-tuple (w,h) scale to this size
+- *imagemode*: 'fit', 'stretch', 'repeat', None or ''
+- *imagealign*: same options as text align, but for image
+- *patch*: 4-tuple - left, top, right, bottom edges for 9-patch rendering
+- *pattern*: bool image is a base64 string
+- *pimage*: filename or image to use for patch if different than image
 
-    TEXT RENDERING
-    font: filename for font
-    fontsize: int size of font
-    fontcolor: 3-tuple font color
-    text: text string (may be multiline)
-    wrap: allow multiline text wraping
-    linespace: int extra space between lines
-    align: text alignment (topleft, topright, midtop
-                           midleft, center, midright
-                           bottomleft, midbottom, bottomright)
+**TEXT RENDERING**
+- *autoscroll*: int speed of auto scroll or 0 disables
+- *font*: filename for font
+- *fontsize*: int size of font
+- *fontcolor*: 3-tuple font color
+- *text*: text string (may be multiline)
+- *wrap*: allow multiline text wraping
+- *linespace*: int extra space between lines
+- *align*: text alignment (topleft, topright, midtop
+                       midleft, center, midright
+                       bottomleft, midbottom, bottomright)
 
-    LIST RENDERING
-    list: list of items (ignores wrap, allows navigation)
-    imagelist: list of filenames or Image objects
-    ilistalign: alignment for list images
-    itemsize: item height for vertical lists (width for horiz ones)
-    selected: 3-tuple color for selected item, or a Region for rendering it
-    scrollable: bool allow up/down to scroll wrapped text
-    autoscroll: int speed of auto scroll or 0 disables
+**LIST RENDERING**
+- *list*: a list of items to be displayed and selected from
+- *itemsize*: the height that each list item is drawn with
+- *select*: a 3-tuple rgb color for the selected item, or a Region for rendering it
+- *selectable*: a list of the indexes of the list attribute that may be selected by the user
+- *scrollable*: bool that allows up/down events to scroll wrapped text when set to True
+- *selected*: the currently selected list item, which will be drawn using the color or Region referenced by the select attribute
 
-CLASSES
-FontManager
-Image
-ImageManager
-InputHandler
-Rect
-Region
+**BARS** (toolbars)
+- *bar: a list of strings, Images, or str names for images in the ImageManager.
+A single null value may split the bar into left and right aligned sides
+- *barspace*: additional space between each bar item beyone its natural size
+- *barwidth*: the minimum width for each bar item
+- *selectablex*: TODO a list of the indexes of the bar that may be selected by the user 
+- *selectedx*: the currently selected list item, or -1 if nothing selected.
+The selected item will be drawn in the color of or with the Region referenced by the select attribute.

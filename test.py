@@ -129,14 +129,14 @@ def game_list():
     names = [os.path.splitext(os.path.split(f)[-1])[0] for f in files]
 
     background = Region(config['background'])
-    gamelist = Region(config['gamelist'], name='gamelist')
+    gamelist = Region(config['gamelist'])
     
     gamelist.select = Region(config['list'])
     gamelist.select.fontsize = gamelist.fontsize
-    gametext = Region(config['gametext'], name='gametext')
-    gameimage = Region(config['gameimage'], name='gameimage')
+    gametext = Region(config['gametext'])
+    gameimage = Region(config['gameimage'])
     if 'gamebar' in config:
-        gamebar = Region(config['gamebar'], name='gambar')
+        gamebar = Region(config['gamebar'])
 
     background.text = names[0]
     gamelist.list = names
