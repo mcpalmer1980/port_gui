@@ -21,7 +21,7 @@ changing the program's code.
 **ImageManager** - The class used to load and cache images in texture memory, and to store associated Image objects.  
 **InputHandler** -The class that handles controller and keyboard input, mapping them into simple string events such as 'up', 'left', 'A', and 'start'  
 **Rect** - The class that represents rectangular regions and can maniputate them.  
-**Region** - This class is the primary building back of pySDL2gui interfaces. It draws a rectangular region with an optional backround, outline, image, text, and/or list. It is defined by attributes in a json file.  
+**Region** - This class is the primary building block of pySDL2gui interfaces. It draws a rectangular region with an optional backround, outline, image, text, and/or list. It is defined by attributes in a json file.  
 **SoundManager** - This class is used to load and play sound effects and music.  
 
 ## DATA:
@@ -186,7 +186,7 @@ Polls the sdl2 event handler for events and updates the quit, update and pressed
 
 
 # Rect class
-This class defines a rectangular region and allows you to manipulate them.
+The Rect class defines a rectangular region and allows you to manipulate them.
 
 **init**(x, y, width, height)  
 
@@ -214,7 +214,7 @@ Return a new Rect that is a copy of another Rect(other) that has been centered a
 A static method that creates a new rect using the bottom and right coordinates instead of width and height.
 
 **from_sdl**( r )  
-A static method that creates a new rect based on the position and size of an sdl_rect object
+A static method that creates a new rect based on the position and size of an sdl_rect object.
 
 **inflate**(x, y=None)  
 Add x to the width and y to height to the Rect, or x to both the width and height if y is undefined. The rect remains centered around the same central point. Negative numbers shrink the Rect.
@@ -264,64 +264,11 @@ Rects have numerous attributes that allow you to read and change the position of
 
 # Region class
 
-For drawing a rectangular region on a renderer context
-Regions may have a fill color, outline, and image, as well
-as scrolling text, an interactive list, or a horizontal toolbar.
-
-The following attributes can be loaded from a dict or json file:
-
-**FILL AND OUTLINE**  
-
-- *area*: 4-tuple of pixels or screen percent(0.0-1.0),
-- *fill*: 3-tuple fill color
-- *outline*: 3-typle outline color
-- *thickness*: int outline thickness,
-- *roundness*: int outline roundness,
-- *border*: int border around text x&y
-- *borderx*: int left/right border around text
-- *bordery*: int top/bottom border around text
-
-**IMAGE RENDERING**  
-
-- *image*: filename for image
-- *imagesize*: 2-tuple (w,h) scale to this size
-- *imagemode*: 'fit', 'stretch', 'repeat', None or ''
-- *imagealign*: same options as text align, but for image
-- *patch*: 4-tuple - left, top, right, bottom edges for 9-patch rendering
-- *pattern*: bool image is a base64 string
-- *pimage*: filename or image to use for patch if different than image
-
-**TEXT RENDERING**  
-
-- *autoscroll*: int speed of auto scroll or 0 disables
-- *font*: filename for font
-- *fontsize*: int size of font
-- *fontcolor*: 3-tuple font color
-- *text*: text string (may be multiline)
-- *wrap*: allow multiline text wraping
-- *linespace*: int extra space between lines
-- *align*: text alignment (topleft, topright, midtop
-                       midleft, center, midright
-                       bottomleft, midbottom, bottomright)
-
-**LIST RENDERING**  
-
-- *list*: a list of items to be displayed and selected from
-- *itemsize*: the height that each list item is drawn with
-- *select*: a 3-tuple rgb color for the selected item, or a Region for rendering it
-- *selectable*: a list of the indexes of the list attribute that may be selected by the user
-- *scrollable*: bool that allows up/down events to scroll wrapped text when set to True
-- *selected*: the currently selected list item, which will be drawn using the color or Region referenced by the select attribute
-
-**BARS** (toolbars)  
-
-- *bar: a list of strings, Images, or str names for images in the ImageManager.
-A single null value may split the bar into left and right aligned sides
-- *barspace*: additional space between each bar item beyone its natural size
-- *barwidth*: the minimum width for each bar item
-- *selectablex*: TODO a list of the indexes of the bar that may be selected by the user 
-- *selectedx*: the currently selected list item, or -1 if nothing selected.
-The selected item will be drawn in the color of or with the Region referenced by the select attribute.
+The Region class is the primary building block of pySDL2gui interfaces. It represents a rectangular
+region, defines its attributes, handles user interaction, and draws itself onto the screen. Each
+region may have a fill color, outline, and image, as well as scrolling text, an interactive list,
+or a horizontal toolbar. These attributes are loaded from a json file and then passed to the class as
+a standard dict.
 
 **init**(data, renderer=None, images=None, fonts=None)  
 Create a new Region for future drawing.
@@ -332,100 +279,158 @@ Create a new Region for future drawing.
 - *fonts*: the FontManager used to draw fonts with
  
 **draw**(area=None, text=None, image=None)  
-    Draw the Region and all of its features  
+Draw the Region and all of its contents.  
      
-- *area*: override Region's area, used internally
-- *text*: override Region's text and list, used internally
-- *image*: override Region's image, used internally
+- *area*: override the Region's area, used internally
+- *text*: override the Region's text or list, used internally
+- *image*: override the Region's image, used internally
 
-**set_defaults**(data, renderer, images, fonts)
-    Set global defaults for all Regions to reduce later parameter requirements.  
-    This is a static method and should be called before initiating any Region
-    objects
+**set_defaults**(data, renderer, images, fonts)  
+Set global defaults for all Regions to reduce later parameter requirements. This
+is a static method and should be called before initiating any Region objects.
      
-- *data*: a dict of Region parameters that will apply to all regions, but will
-be overriden by parameters sent when creating Region objects later
-- *renderer*: a sdl2.ext.renderer context to draw onto
+- *data*: a dict of Region parameters that apply to all regions, but will
+be overriden by parameters sent when creating individual Region objects later
+- *renderer*: an sdl2.ext.renderer context to draw onto
 - *images*: a gui.ImageManager reference for loading images
 - *fonts*: a gui.FontManager reference for loading fonts
 
-**update**(inp)
+**update**(inp)  
     Update the current region based on user input, the autoscrolling setting, and
     other conditions.
      
 - *inp*: reference to an gui.InputHandler to receive input
 - *rvalue*: True if the region needs to be redrawn, otherwise False
 
+The following attributes can be loaded from a dict or json file:
+
+## Region attributes
+
+**FILL AND OUTLINE**  
+
+- *area*: 4-tuple representing a rectangular area for the region, defined in (left,top,right,bottom) format, not in (x, y, width, height) format like a normal Rect object. It can be in pixels (10,10,200,400), or in screen percent (0.1, 0.1, 0.5, 0.9).
+- *fill*: 3-tuple rgb fill color
+- *outline*: 3-tuple rgb outline color
+- *thickness*: int outline thickness,
+- *roundness*: int radius to draw the region as a rounded rectangle
+- *border*: int border around all sides of text, or use borderx and bordery instead
+- *borderx*: int left/right border around text
+- *bordery*: int top/bottom border around text
+
+**IMAGE RENDERING**  
+
+- *image*: filename for an image to draw in the region  
+- *imagesize*: an 2-tuple of ints (width,height) to draw image at a specific size
+- *imagemode*: draw mode for the image can be 'fit', 'stretch', or 'repeat'
+- *imagealign*: string options to align the image include: topleft, topright, midtop,
+midleft, center, midright, bottomleft, midbottom, and bottomright  
+- *patch*: a 4-tuple of ints (left, top, right, bottom) that defines the size of
+non-stretched portions of the image when drawing as a 9-patch, or None to
+render it normally 
+- *pattern*: (TODO) if True the image attribute is loaded as a base64 string value
+- *pimage*: filename or image to use for patch rendering if different than image
+
+**TEXT RENDERING**  
+
+
+- *align*: string options to align the text include: topleft, topright, midtop,
+midleft, center, midright, bottomleft, midbottom, and bottomright  
+- *autoscroll*: number of rendered frames (update calls) between each line of auto
+scrolling for the text, or 0 to disable auto-scrolling (default)
+- *font*: filename for the font to draw with
+- *fontsize*: int size of font to draw with
+- *fontcolor*: 3-tuple rgb color used to draw text
+- *linespace*: int extra space between each line of wrapped text
+- *scrollable*: bool that allows up/down events to scroll wrapped text when set to True
+- *text*: text string to draw, which may include newlines
+- *wrap*: set True to allow multiline text wrapping
+
+**LIST RENDERING**  
+
+- *list*: a list of items to be displayed and selected from
+- *itemsize*: the height that each list item is drawn with
+- *select*: a 3-tuple rgb color for the selected item, or a Region for rendering it
+- *selectable*: a list including the index for each item of the list that may be selected by the user
+- *selected*: the currently selected list item, which will be drawn using the color or Region referenced by the select attribute
+
+**BARS** (toolbars)  
+
+- bar: a list that may include strings, Image objects, and image filenames. They will be drawn as a horizontal bar. A single null value will split the bar into 2 sides, the first one left aligned and the second one right aligned
+- *barspace*: additional space between each bar item beyond its natural size
+- *barwidth*: the minimum width for each bar item
+- *selectablex*: TODO a list indluding the index for each item in the bar that may be selected by the user 
+- *selectedx*: the currently selected list item, or -1 if nothing is selected.
+The selected item will be drawn in the color of or with the Region referenced by the select attribute.
+
 # SoundManager class
-   	The SoundManager class loads and plays sound files.
+The SoundManager class loads and plays sound files.
  
-**play**(name, volume=1)
-Play a loaded sound with the given name
+**play**(name, volume=1)  
+Play a loaded sound with the given name  
  
 - *name*: name of sound, either the filename(without extension) or
     an alternate name provided to the load() method
-- *volume*: volume to play sound at, from 0.0 to 1.
+- *volume*: volume to play sound at, from 0.0 to 1.0
 
-**init**()
-Initialize the sound system
+**init**()  
+Initialize the sound system.  
 
 **load**(fn, name=None, volume=1)  
-Load a given sound file into the Sound Manager  
+Load a given sound file into the Sound Manager.  
  
 - *fn*: filename for sound file to load
-- *name*: alternate name to use to play the sound instead of its filename
+- *name*: alternate name to use when playing the sound instead of its filename
 - *volume*: default volume level to play the sound at, from 0.0 to 1.0
 
 **music**(fn, loops=-1, volume=1)  
-Loads a music file and plays immediately plays it  
+Loads a music file and immediately plays it.  
  
 - *fn*: path to music file to load and play
 - *loops*: number of times to play song, or loop forever by default
 - *volume*: volume level to play music, between 0.0 and 1.0
 
-**volume** variable to change master volume from 0.0 to 1.0
+**volume** - variable to change the master volume from 0.0 to 1.0
  
 # Functions
       	 	
 **deep_merge**(d, u, r=False)  
-Add contents of dict u into a copy of dict d. This will not change the
-provided d parameter dict, only return a new copy.
+Add contents of dict u into a copy of dict d. This does not change dict d, but returns a new one.
  
 - *d*: dict to add new values to
 - *u*: dict with values to add into d
 - *rvalue* the new dict with u merged into d
 
 **deep_print**(d, name=None, l=0, file=None)  
-Pretty print a dict recursively, included all child dicts  
+Pretty print a dict recursively, including all child dicts.    
  
-- *d*: dict to pring
-- *name*: name of dict to use in printing
+- *d*: dict to print
+- *name*: printed name of dict, useful when printing multiple dicts with succesive deep_print() calls
 - *l*: used internaly
 - *file*: open file to print into instead of to the console
 
 **deep_update**(d, u, r=False)  
 Add contents of dict u into dict d. This will change the provided d
-parameter dict
+parameter dict.  
  
 - *d*: dict to add new values to
 - *u*: dict with values to add into d
 - *rvalue* the updated dict, same as d
 
 **get_color_mod**(texture)  
-Get color_mod value of a texture as an RGB 3-tuple NOT WORKING  
+Get the color_mod value of a texture as an RGB 3-tuple NOT WORKING.  
 
 **get_text_size**(font, text='')  
 Calculate the size of given text using the given font, or if
-no text is provided, then return the font's height instead
+no text is provided, then return the font's height instead.
  
 - *font*: an existing sdl2.ext.FontTTF object
-- *text*: optional text string to generate size of
-- *rvalue*: (width(int), height(int)) tuple if text provided,
-        or height(int) otherwise
+- *text*: optional text string to calculate the size of
+- *rvalue*: int 2-tuple (width, height) tuple if text provided,
+or int height otherwise
 
-**keyboard**(options, kbl, kbu, text='')
-Display an on screen keyboard and allow user to enter/modify
-a text string
+**keyboard**(options, kbl, kbu, text='')  
+Display an onscreen keyboard and allow users to enter or modify
+a text string.
 
 - *options*: dict of Region attributes for theming
 - *kbl*: list of strings or bar lists to represent keyboard keys. Tthe final row
@@ -433,58 +438,57 @@ must be: shift, space, backspace, and then Enter/Done
 - *kbu*: same as kbl but with upper case letters
 - *test*: optional string to edit, or blank by default
 
-**make_option_bar**(d)
+**make_option_bar**(d)  
 Converts a option dict into a list of bars compatible with the Region
-class.
+class, used internally by option_menu()
      
 - *d*: dict that works with the option_menu() function
 - *rvalue*: a list of bars compatible with the Region list feature
 
-**option_menu**(foreground, options, background=None, regions=[])
+**option_menu**(foreground, options, background=None, regions=[])  
 Display an option menu, handle input, and return selected
-values. Users map press up or left to select an option, 
-or press left, right, or left to adjust the selected option.
-Press start to exit option screen, or B to exit option screen
-reverting any changes to their original values.  
+values. Users may press up or down to select an option and press left or right
+to adjust the selected option. Pressing start exits the option screen with
+the options changed, wherea B exits the option screen with all options reverted
+to their original values.  
      
-- *foreground*: a Region to draw option menu into
+- *foreground*: a Region to draw the option menu into
 - *options*: a dict of options to include in the menu. Each key is 
-the name/description of the entry. Each value defines the options.
+the name displayed for the entry. Each value defines the options
 - *background*: a background Region, or config['background'] by default
 - *regions*: a list of optional Regions to update() and draw() in
-addition to the option_menu and background
+addition to the option_menu and its background
      
     **OPTIONS**
-- checkbox: If the dict value is the str 'checked' or 'unchecked'
-          a checkbox is displayed with the 'checked' or 'unchecked'
-          image loaded from the ImageManager
-- list:   If the dict value is a list the first item is displayed
-          and others can be selected with left or right, rotating
-          the list. May use range_list function to create list of
-          numerical values to simulate a slider.
-- option  If the dict value is a string the key is displayed, along
-          with the 'more' image from ImageManager. If the option is
-          selected, option_menu returns the dict value
+- **checkbox** - If the dict value is a string equal to 'checked' or 'unchecked'
+then a checkbox is displayed. There must be images named 'checked' and 'unchecked' in
+the ImageManager so that it can draw them.
+- **list** -   If the dict value is a list then the first item is displayed
+and the others may be selected with left or right, rotating the list. The range_list()
+function may be used to create a list of numerical values to simulate a slider widget.
+- **option** -  If the dict value is a string the key is displayed, along
+with the 'more' image from ImageManager. If the option is
+selected, option_menu() returns the dict value
 
 **range_list**(start, low, high, step)  
-Creates a list of strings representing numbers within a given range. 
-Meant for use with gui.options_menu as an alternative to a slider widget.
-The values will be a listin numerical order, but rotated to have the
+Creates a list of strings including each number within a given range. 
+It is meant for use with gui.options_menu() as an alternative to a slider widget.
+The values will be a list in numerical order, but rotated to show the
 start value first.
  
-- *start*: the value to start at (first value)
-- *low*: lowest value for list
-- *hight*: highest value for list
+- *start*: the value to start at (first value shown)
+- *low*: the lowest value in the list
+- *hight*: the highest value in the list
 - *step*: the numerical value between each item in the list
 - *rvalue*: a list of numerical values, rotated to have start value first
 
 ```py 
-        example*: range_list(50, 0, 100, 10) ->
+        example: range_list(50, 0, 100, 10) ->
                 [50, 60, 70, 80, 90, 100, 0, 10, 20, 30, 40]
 ```
 
 **set_color_mod**(texture, color)  
-Set color_mod value of a texture using an RGB 3-tuple NOT WORKING
+Set the color_mod value of a texture using an RGB 3-tuple NOT WORKING
 
 **set_globals**(*globs)  
 Set the global values within this files scope
