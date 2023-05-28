@@ -68,59 +68,66 @@ TODO
     Alpha for images
 '''
 
-'''
-    FILL MODE
-    area: 4-tuple of pixels or screen percent(0.0-1.0),
-    color: 3-tuple fill color
-    outline: 3-typle outline color
-    thickness: int outline thickness,
-    roundness: int outline roundness,
-    border: int border around text x or x&y
-    bordery: int top/bottom border around text
-    
-    IMAGE RENDERING
-    image: filename for image
-    imagerect: 4-tuple (x,y,w,h) region of image to use
-    imagesize: 2-tuple (w,h) scale to this size
-    imagemode: 'fit', 'stretch', 'repeat', None or ''
-    imagealign: same options as text align, but for image
-    patch: 4-tuple left, top, right, bottom edges for 9-patch rendering
-    pimage: filename or image to use for patch if different than image
-    pattern: bool image is a base64 string
-
-    TEXT RENDERING
-    font: filename for font
-    fontsize: int size of font
-    fontcolor: 3-tuple font color
-    text: text string (may be multiline)
-    wrap: allow multiline text wraping
-    linespace: int extra space between lines
-    align: text alignment (topleft, topright, midtop
-                           midleft, center, midright
-                           bottomleft, midbottom, bottomright)
-
-    LIST RENDERING
-    list: list of items (ignores wrap, allows navigation)
-    imagelist: list of filenames or Image objects
-    ilistalign: alignment for list images
-    itemsize: item height for vertical lists (width for horiz ones)
-    selected: 3-tuple color for selected item, or a Region for rendering it
-    scrollable: bool allow up/down to scroll wrapped text
-    autoscroll: int speed of auto scroll or 0 disables
-'''
-
 class Region:
     '''
-    For drawing a rectangular region on a renderer context
-    Regions may have a fill color, outline, image, and/or text
-    Attributes are loaded from a dict or json file
-    
-    area, color, thickness, outline, roundness, 
-    image, pattern, repeat, stretch
-    borderx, border
-    font, fontsize, fontcolor, text, align
-    scrollable, autoscroll, wrap, linespace
-    '''
+    The Region class is the primary building block of pySDL2gui interfaces.
+    It represents a rectangular region, defines its attributes, handles
+    user interaction, and draws itself onto the screen. Each region may
+    have a fill color, outline, and image, as well as scrolling text, an
+    interactive list, or a horizontal toolbar. These attributes are loaded
+    from a json file and then passed to the class as a standard dict.
+
+FILL AND OUTLINE  
+area: 4-tuple representing a rectangular area for the region, defined in (left,top,right,bottom) format, not in (x, y, width, height) format like a normal Rect object. It can be in pixels (10,10,200,400), or in screen percent (0.1, 0.1, 0.5, 0.9).
+fill: 3-tuple rgb fill color
+outline: 3-tuple rgb outline color
+thickness: int outline thickness,
+roundness: int radius to draw the region as a rounded rectangle
+border: int border around all sides of text, or use borderx and bordery instead
+borderx: int left/right border around text
+bordery: int top/bottom border around text
+
+IMAGE RENDERING  
+image: filename for an image to draw in the region  
+imagesize: an 2-tuple of ints (width,height) to draw image at a specific size
+imagemode: draw mode for the image can be 'fit', 'stretch', or 'repeat'
+imagealign: string options to align the image include: topleft, topright, midtop,
+midleft, center, midright, bottomleft, midbottom, and bottomright  
+patch: a 4-tuple of ints (left, top, right, bottom) that defines the size of
+non-stretched portions of the image when drawing as a 9-patch, or None to
+render it normally 
+pattern: (TODO) if True the image attribute is loaded as a base64 string value
+pimage: filename or image to use for patch rendering if different than image
+
+TEXT RENDERING  
+align: string options to align the text include: topleft, topright, midtop,
+midleft, center, midright, bottomleft, midbottom, and bottomright  
+autoscroll: number of rendered frames (update calls) between each line of auto
+scrolling for the text, or 0 to disable auto-scrolling (default)
+font: filename for the font to draw with
+fontsize: int size of font to draw with
+fontcolor: 3-tuple rgb color used to draw text
+fontoutline: 2-tuple (RGB 3-tuple color, int outline thickness)
+linespace: int extra space between each line of wrapped text
+scrollable: bool that allows up/down events to scroll wrapped text when set to True
+text: text string to draw, which may include newlines
+wrap: set True to allow multiline text wrapping
+
+LIST RENDERING  
+list: a list of items to be displayed and selected from
+itemsize: the height that each list item is drawn with
+select: a 3-tuple rgb color for the selected item, or a Region for rendering it
+selectable: a list including the index for each item of the list that may be selected by the user
+selected: the currently selected list item, which will be drawn using the color or Region referenced by the select attribute
+
+BARS (toolbars)  
+bar: a list that may include strings, Image objects, and image filenames. They will be drawn as a horizontal bar. A single null value will split the bar into 2 sides, the first one left aligned and the second one right aligned
+barspace: additional space between each bar item beyond its natural size
+barwidth: the minimum width for each bar item
+selectablex: TODO a list indluding the index for each item in the bar that may be selected by the user 
+selectedx: the currently selected list item, or -1 if nothing is selected.
+The selected item will be drawn in the color of or with the Region referenced by the select attribute.
+'''
     DATA = {}; RENDERER=None; IMAGES=None; FONTS=None
     def __init__(self, data, renderer=None, images=None, fonts=None):
         'Create a new Region for future drawing.'
@@ -156,6 +163,7 @@ class Region:
         self.font = self._verify_file('font', optional=True)
         self.fontsize = self._verify_int('fontsize', 30)
         self.fontcolor = self._verify_color('fontcolor', (255,255,255))
+        self.fontoutline = self._verify_outline('fontoutline', None, True)
         self._text = self._verify_text('text', optional=True)
         self.wrap = self._verify_bool('wrap', False, True)
         self.linespace = self._verify_int('linespace', 0, True)
@@ -185,6 +193,7 @@ class Region:
         self.scroll_delay = -self.autoscroll*2
         self.selected = 0
         self.selectedx = -1
+        print(self.fontoutline)
 
     def set_defaults(data, renderer, images, fonts):
         '''
@@ -212,6 +221,7 @@ class Region:
 
         area = area or self.area.copy()
         image = image or self.image
+        screen.blendmode = sdl2.SDL_BLENDMODE_BLEND
 
         # FILL AND OUTLINE  
         if self.patch:
@@ -224,12 +234,12 @@ class Region:
             if self.roundness and sdlgfx:
                 sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
                     area.x, area.y, area.right, area.bottom,
-                    self.roundness, *self.outline, 255)
+                    self.roundness, *self.outline)
             area.inflate(-self.thickness)               
             if self.roundness and sdlgfx:
                 sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
                     area.x, area.y, area.right, area.bottom,
-                    self.roundness, *self.fill, 255)
+                    self.roundness, *self.fill)
 
             else:
                 self.renderer.fill(area.sdl(), self.outline)
@@ -240,8 +250,9 @@ class Region:
             if self.roundness and sdlgfx:
                 sdlgfx.roundedBoxRGBA(self.renderer.sdlrenderer,
                     area.x, area.y, area.right, area.bottom,
-                    self.roundness, *self.fill, 255)
+                    self.roundness, *self.fill)
             else:
+                print(self.fill)
                 self.renderer.fill(area.sdl(), self.fill)
 
         elif self.outline:
@@ -250,7 +261,7 @@ class Region:
                 if self.roundness and sdlgfx:
                     sdlgfx.roundedRectangleRGBA(self.renderer.sdlrenderer,
                         r.x, r.y, r.x+r.w, r.y+r.h,
-                        self.roundness, *self.outline, 255)
+                        self.roundness, *self.outline)
                 else:
                     self.renderer.draw_rect(r, self.outline)
                 r.x += 1; r.w -= 2
@@ -293,8 +304,8 @@ class Region:
         # RENDER TEXT
         elif text:
             x, y = getattr(text_area, self.align, text_area.topleft)
-            self.fonts.draw(text, x, y, self.fontcolor, 255,
-                    self.align, text_area).height + self.linespace
+            self.fonts.draw(text, x, y, self.fontcolor, 255, self.align,
+                    text_area, outline=self.fontoutline).height + self.linespace
 
         elif self._text:
             pos = self.scroll_pos % len(self._text)
@@ -304,8 +315,8 @@ class Region:
             for l in self._text[pos:]:
                 if y + self.fonts.height > text_area.bottom:
                     break
-                y += self.fonts.draw(l, x, y, self.fontcolor, 255,
-                        self.align, text_area).height + self.linespace
+                y += self.fonts.draw(l, x, y, self.fontcolor, 255, self.align,
+                        text_area, outline=self.fontoutline).height + self.linespace
 
         # RENDER LIST
         elif self.list:
@@ -337,10 +348,10 @@ class Region:
                         self.fonts.load(self.font, self.fontsize)
                     else:
                         self.fonts.draw(t, *irect.midleft, self.select, 255,
-                                'midleft', text_area)             
+                                'midleft', text_area, outline=self.fontoutline)             
                 else:           
                     self.fonts.draw(t,  *irect.midleft, self.fontcolor, 255,
-                            "midleft", text_area)
+                            "midleft", text_area, outline=self.fontoutline)
                 irect.y += itemsize
                 i += 1
 
@@ -491,23 +502,43 @@ class Region:
                     self.fonts.load(self.font, self.fontsize)
                 
                 else:
-                    self.renderer.fill(dest.tuple(), [0,0,255,100])
+                    #self.renderer.fill(dest.tuple(), [0,0,255,100])
 
                     if isinstance(item, Image):
                         item.draw_in(Rect.from_sdl(item.srcrect).fitted(dest).tuple())
                     else:
                         x, y = dest.center
                         self.fonts.draw(item, x, y,
-                                self.fontcolor, 255, 'center', area)
+                                self.select, 255, 'center', area,
+                                outline=self.fontoutline)
 
             elif isinstance(item, Image):
                 item.draw_in(Rect.from_sdl(item.srcrect).fitted(dest).tuple())
             else:
                 x, y = dest.center
-                self.fonts.draw(item, x, y,
-                        self.fontcolor, 255, 'center', area)
+                self.fonts.draw(item, x, y,self.fontcolor, 255, 'center',
+                        area, outline=self.fontoutline)
         #self.renderer.blendmode = mode
 
+    def _verify_outline(self, name, default, optional):
+        print(name, default)
+        val = self._dict.get(name, default)
+        if val == None and optional: return None
+
+        print(val)
+        if isinstance(val, (list, tuple)) and len(val) == 2:
+            color = self._verify_color(None, val[0])
+            thickness = self._verify_int(None, val[1])
+            if color and thickness:
+                return color, thickness
+
+        else:
+            raise Exception(f'fontoutline is not a 2-tuple')
+
+        if not isinstance(val, int):
+            raise Exception(f'{name} is not an int')
+        #print(f'{name}: {val}')
+        return None
 
     def _draw_patch(self, area, image):
         '''
@@ -594,7 +625,9 @@ class Region:
         if val == None and optional: return None
 
         try:
-            if len(val) != 3:
+            if len(val) == 3:
+                val = tuple(val) + (255,)
+            elif len(val) != 4:
                 raise Exception('color incorrect length')
         except TypeError:
             print('color not iterable')
@@ -728,6 +761,7 @@ def option_menu(foreground, options, background=None, regions=[]):
               selected, option_menu returns the dict value
     '''   
     bars, selectable = make_option_bar(options)
+    copy = deep_update({}, options)
 
     region = Region(foreground)
     region.list = bars
@@ -747,6 +781,7 @@ def option_menu(foreground, options, background=None, regions=[]):
         if inp.pressed:
             update = True
             if inp.quit or inp.pressed in ('select', 'B'):
+                deep_update(options, copy)
                 return ''
             elif inp.pressed in ('right', 'A'):
                 k = bars[region.selected][0]
@@ -838,9 +873,9 @@ def keyboard(options, kbl, kbu, text=''):
     shift, space, backspace, enter, *_ = keyboard.list[-1] 
 
     keyboard.selected = keyboard.selectedx = 1
-    keyboard.select = Region(config['list'])
-    keyboard.select.fontsize = keyboard.fontsize
-    keyboard.select.align = 'center'
+    keyboard.select = (100,100,100,100) #Region(config['list'])
+    #keyboard.select.fontsize = keyboard.fontsize
+    #keyboard.select.align = 'center'
     background = Region(config['background'])
     background.fontsize = keyboard.fontsize
     background.borderx = keyboard.area.x

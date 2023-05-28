@@ -7,7 +7,7 @@
     "background":
     {
         "area": [0.0,0.0,1.0,1.0],
-        "fill": [200,200,200],
+        "fill": [200,200,200,255],
         "borderx": 8,
         "font": "Roboto.ttf",
         "fontsize": 36,
@@ -46,7 +46,6 @@
             "Exit Portmaster and return to your game list."
         ],
 
-        "roundness": 20,
         "thickness": 6
     },
     "maininfo":
@@ -64,12 +63,11 @@
     "list":
     {
         "area": [0.0,0.0,1.0,1.0],
-        "fill": [0,0,0],
+        "fill": [0,0,0,100],
         "color": [50,50,50],
         "pattern": "",
         "repeat": 0,
         "align": "midleft",
-        "roundness": 6,
         "font": "Roboto.ttf",
         "fontsize": 30,
         "fontcolor": [255,255,255],
@@ -80,9 +78,8 @@
     },
     "gamelist":
     {
-        "area": [-10, 0.1, 0.45,0.75],
+        "area": [-10, 0.1, 0.75,0.75],
         "borderx": 14,
-        "fill": [230,230,230],
         "roundness": 10,
         "font": "Roboto.ttf",
         "fontsize": 24,

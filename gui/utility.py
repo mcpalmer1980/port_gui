@@ -55,7 +55,7 @@ If not, see <http://www.gnu.org/licenses/>.
 
 from ctypes import c_int, c_ubyte, byref
 import sdl2, sdl2.ext
-import os
+import os, random
 global RESOURCES, sounds
 RESOURCES = sdl2.ext.Resources(__file__, '../assets')
 
@@ -409,7 +409,7 @@ class Image():
                 dstrect=(x, y), angle=angle, flip=flip, center=center)
 
     def draw_in(self, dest, angle=0, flip_x=None, flip_y=None,
-                center=None, fit=False):
+                center=None, fit=False, color=None):
         '''
         Draw image inside given Rect region (may squish or stretch image)
 
@@ -422,7 +422,7 @@ class Image():
              ratio    
         '''
         center = center or self.center
-        angle = 45 #angle or self.angle
+        angle = angle or self.angle
 
         if fit:
             dest = self.srcrect.fitted(dest)
@@ -430,7 +430,8 @@ class Image():
             flip = 1 * bool(self.flip_x) | 2 * bool(self.flip_y)
         else:
             flip = 1 * bool(flip_x) | 2 * bool(flip_y)
-
+        
+        set_color_mod(self.texture, (255,255,255))
         self.renderer.copy(self.texture, self.srcrect,
                 dstrect=dest, angle=angle, flip=flip, center=center)
 
@@ -631,7 +632,7 @@ class FontManager():
 
 
     def draw(self, text, x, y, color=None, alpha=None,
-            align='topleft', clip=None, wrap=None, linespace=0, font=None):
+            align='topleft', clip=None, wrap=None, linespace=0, font=None, outline=None):
         '''
         Draw text string onto pySDL2.ext.Renderer context
 
@@ -640,11 +641,12 @@ class FontManager():
         :param y: y coordinate to draw at
         :param color: (r,g,b) color tuple
         :param alpha: alpha transparency value
-        :param align: treat x as 'center' or 'right' pos (def left)
-        :param valign: treat y as 'center' or 'bottom' pos (def top)
+        :param align: choose one of: topleft, midtop, topright, midleft, center, midright,
+                bottomleft, midbottom, or bottomright
         :param clip: clip text to Rect
         :param wrap: #TODO wrap text over multiple lines, using clip Rect
         :param font: (filename, size) tuple for font, defaults to last_loaded
+        :param outline: (color, thickness) or None
         :rvalue rect: actual area drawn into
         '''
 
@@ -694,7 +696,13 @@ class FontManager():
             if clip and dest.right > clip.right:
                 break
 
-            self.renderer.copy(texture, src.sdl(), dest.sdl())
+            if outline:
+                sdl2.SDL_SetTextureColorMod(texture.tx, *outline[0])
+                self.renderer.copy(texture, src.sdl(), dest.inflated(outline[1]).sdl())
+                sdl2.SDL_SetTextureColorMod(texture.tx, *color)
+                self.renderer.copy(texture, src.sdl(), dest.inflated(-outline[1]).sdl())
+            else:
+                self.renderer.copy(texture, src.sdl(), dest.sdl())
             #self.renderer.draw_rect(dest.tuple(), (255,255,255,255))
             dest.x += src.width
         return out_rect
@@ -935,8 +943,7 @@ def set_color_mod(texture, color):
     NOT WORKING
     '''
     r, g, b = c_ubyte(color[0]), c_ubyte(color[1]), c_ubyte(color[2])
-    print('inside set', r.value,g.value,b.value)
-    sdl2.SDL_GetTextureColorMod(texture.tx, byref(r), byref(g), byref(b))
+    sdl2.SDL_SetTextureColorMod(texture.tx, r, g, b)
 
 def set_globals(*globs):
     '''

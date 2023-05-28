@@ -9,7 +9,7 @@ This module is designed to produce full screen GUIs for lower powered
 GNU/Linux based retro handhelds using game controller style input, but it may
 prove useful on other hardware.  
 
-The main building block of GUIs built with this module is the Region, which
+The main building block of GUIs built with this module is the [Region](#image-class), which
 represents a rectangular area that can display text, lists, and images. Each
 Region has numerous attributes that should be defined in the theme.json and
 defaults.json files, which can be used to change the look and feel of a GUI without

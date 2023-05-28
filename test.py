@@ -45,9 +45,12 @@ def main():
                 update = True
             picked = picked % len(blist)
 
+        im = images.load('image.png')
+
         if update or inp.update:
             mainlist.selected = mainlist.selected % len (mainlist.list)
             maininfo.text = config['mainlist']['info'][mainlist.selected]
+           
             background.draw()
             mainlist.draw()
             maininfo.draw()
